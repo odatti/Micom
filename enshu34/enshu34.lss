@@ -1,0 +1,175 @@
+
+enshu34.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .data         00000000  00800100  00000128  000001bc  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  1 .text         00000128  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .bss          00000002  00800100  00800100  000001bc  2**0
+                  ALLOC
+  3 .comment      00000011  00000000  00000000  000001bc  2**0
+                  CONTENTS, READONLY
+  4 .debug_aranges 00000040  00000000  00000000  000001d0  2**3
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_info   0000017c  00000000  00000000  00000210  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_abbrev 00000028  00000000  00000000  0000038c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_line   000000b6  00000000  00000000  000003b4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	19 c0       	rjmp	.+50     	; 0x34 <__ctors_end>
+   2:	28 c0       	rjmp	.+80     	; 0x54 <__bad_interrupt>
+   4:	27 c0       	rjmp	.+78     	; 0x54 <__bad_interrupt>
+   6:	26 c0       	rjmp	.+76     	; 0x54 <__bad_interrupt>
+   8:	26 c0       	rjmp	.+76     	; 0x56 <__vector_4>
+   a:	24 c0       	rjmp	.+72     	; 0x54 <__bad_interrupt>
+   c:	23 c0       	rjmp	.+70     	; 0x54 <__bad_interrupt>
+   e:	22 c0       	rjmp	.+68     	; 0x54 <__bad_interrupt>
+  10:	21 c0       	rjmp	.+66     	; 0x54 <__bad_interrupt>
+  12:	20 c0       	rjmp	.+64     	; 0x54 <__bad_interrupt>
+  14:	1f c0       	rjmp	.+62     	; 0x54 <__bad_interrupt>
+  16:	1e c0       	rjmp	.+60     	; 0x54 <__bad_interrupt>
+  18:	1d c0       	rjmp	.+58     	; 0x54 <__bad_interrupt>
+  1a:	1c c0       	rjmp	.+56     	; 0x54 <__bad_interrupt>
+  1c:	3c c0       	rjmp	.+120    	; 0x96 <__vector_14>
+  1e:	1a c0       	rjmp	.+52     	; 0x54 <__bad_interrupt>
+  20:	19 c0       	rjmp	.+50     	; 0x54 <__bad_interrupt>
+  22:	18 c0       	rjmp	.+48     	; 0x54 <__bad_interrupt>
+  24:	17 c0       	rjmp	.+46     	; 0x54 <__bad_interrupt>
+  26:	16 c0       	rjmp	.+44     	; 0x54 <__bad_interrupt>
+  28:	15 c0       	rjmp	.+42     	; 0x54 <__bad_interrupt>
+  2a:	14 c0       	rjmp	.+40     	; 0x54 <__bad_interrupt>
+  2c:	13 c0       	rjmp	.+38     	; 0x54 <__bad_interrupt>
+  2e:	12 c0       	rjmp	.+36     	; 0x54 <__bad_interrupt>
+  30:	11 c0       	rjmp	.+34     	; 0x54 <__bad_interrupt>
+  32:	10 c0       	rjmp	.+32     	; 0x54 <__bad_interrupt>
+
+00000034 <__ctors_end>:
+  34:	11 24       	eor	r1, r1
+  36:	1f be       	out	0x3f, r1	; 63
+  38:	cf ef       	ldi	r28, 0xFF	; 255
+  3a:	d4 e0       	ldi	r29, 0x04	; 4
+  3c:	de bf       	out	0x3e, r29	; 62
+  3e:	cd bf       	out	0x3d, r28	; 61
+
+00000040 <__do_clear_bss>:
+  40:	21 e0       	ldi	r18, 0x01	; 1
+  42:	a0 e0       	ldi	r26, 0x00	; 0
+  44:	b1 e0       	ldi	r27, 0x01	; 1
+  46:	01 c0       	rjmp	.+2      	; 0x4a <.do_clear_bss_start>
+
+00000048 <.do_clear_bss_loop>:
+  48:	1d 92       	st	X+, r1
+
+0000004a <.do_clear_bss_start>:
+  4a:	a2 30       	cpi	r26, 0x02	; 2
+  4c:	b2 07       	cpc	r27, r18
+  4e:	e1 f7       	brne	.-8      	; 0x48 <.do_clear_bss_loop>
+  50:	4f d0       	rcall	.+158    	; 0xf0 <main>
+  52:	68 c0       	rjmp	.+208    	; 0x124 <_exit>
+
+00000054 <__bad_interrupt>:
+  54:	d5 cf       	rjmp	.-86     	; 0x0 <__vectors>
+
+00000056 <__vector_4>:
+  56:	1f 92       	push	r1
+  58:	0f 92       	push	r0
+  5a:	0f b6       	in	r0, 0x3f	; 63
+  5c:	0f 92       	push	r0
+  5e:	11 24       	eor	r1, r1
+  60:	8f 93       	push	r24
+  62:	9f 93       	push	r25
+  64:	80 91 b1 00 	lds	r24, 0x00B1
+  68:	81 11       	cpse	r24, r1
+  6a:	0e c0       	rjmp	.+28     	; 0x88 <__vector_4+0x32>
+  6c:	86 b1       	in	r24, 0x06	; 6
+  6e:	90 e0       	ldi	r25, 0x00	; 0
+  70:	80 95       	com	r24
+  72:	90 95       	com	r25
+  74:	84 ff       	sbrs	r24, 4
+  76:	08 c0       	rjmp	.+16     	; 0x88 <__vector_4+0x32>
+  78:	84 e0       	ldi	r24, 0x04	; 4
+  7a:	80 93 b1 00 	sts	0x00B1, r24
+  7e:	83 e0       	ldi	r24, 0x03	; 3
+  80:	85 bd       	out	0x25, r24	; 37
+  82:	8e e1       	ldi	r24, 0x1E	; 30
+  84:	80 93 b3 00 	sts	0x00B3, r24
+  88:	9f 91       	pop	r25
+  8a:	8f 91       	pop	r24
+  8c:	0f 90       	pop	r0
+  8e:	0f be       	out	0x3f, r0	; 63
+  90:	0f 90       	pop	r0
+  92:	1f 90       	pop	r1
+  94:	18 95       	reti
+
+00000096 <__vector_14>:
+  96:	1f 92       	push	r1
+  98:	0f 92       	push	r0
+  9a:	0f b6       	in	r0, 0x3f	; 63
+  9c:	0f 92       	push	r0
+  9e:	11 24       	eor	r1, r1
+  a0:	8f 93       	push	r24
+  a2:	9f 93       	push	r25
+  a4:	80 91 00 01 	lds	r24, 0x0100
+  a8:	90 91 01 01 	lds	r25, 0x0101
+  ac:	84 36       	cpi	r24, 0x64	; 100
+  ae:	91 05       	cpc	r25, r1
+  b0:	19 f4       	brne	.+6      	; 0xb8 <__vector_14+0x22>
+  b2:	8e e3       	ldi	r24, 0x3E	; 62
+  b4:	80 93 b3 00 	sts	0x00B3, r24
+  b8:	80 91 00 01 	lds	r24, 0x0100
+  bc:	90 91 01 01 	lds	r25, 0x0101
+  c0:	88 3c       	cpi	r24, 0xC8	; 200
+  c2:	91 05       	cpc	r25, r1
+  c4:	49 f4       	brne	.+18     	; 0xd8 <__vector_14+0x42>
+  c6:	10 92 b1 00 	sts	0x00B1, r1
+  ca:	15 bc       	out	0x25, r1	; 37
+  cc:	16 bc       	out	0x26, r1	; 38
+  ce:	10 92 01 01 	sts	0x0101, r1
+  d2:	10 92 00 01 	sts	0x0100, r1
+  d6:	05 c0       	rjmp	.+10     	; 0xe2 <__vector_14+0x4c>
+  d8:	01 96       	adiw	r24, 0x01	; 1
+  da:	90 93 01 01 	sts	0x0101, r25
+  de:	80 93 00 01 	sts	0x0100, r24
+  e2:	9f 91       	pop	r25
+  e4:	8f 91       	pop	r24
+  e6:	0f 90       	pop	r0
+  e8:	0f be       	out	0x3f, r0	; 63
+  ea:	0f 90       	pop	r0
+  ec:	1f 90       	pop	r1
+  ee:	18 95       	reti
+
+000000f0 <main>:
+  f0:	88 e0       	ldi	r24, 0x08	; 8
+  f2:	8a b9       	out	0x0a, r24	; 10
+  f4:	17 b8       	out	0x07, r1	; 7
+  f6:	80 e1       	ldi	r24, 0x10	; 16
+  f8:	88 b9       	out	0x08, r24	; 8
+  fa:	82 e1       	ldi	r24, 0x12	; 18
+  fc:	80 93 b0 00 	sts	0x00B0, r24
+ 100:	89 ef       	ldi	r24, 0xF9	; 249
+ 102:	87 bd       	out	0x27, r24	; 39
+ 104:	92 e0       	ldi	r25, 0x02	; 2
+ 106:	94 bd       	out	0x24, r25	; 36
+ 108:	15 bc       	out	0x25, r1	; 37
+ 10a:	80 91 6e 00 	lds	r24, 0x006E
+ 10e:	82 60       	ori	r24, 0x02	; 2
+ 110:	80 93 6e 00 	sts	0x006E, r24
+ 114:	90 93 68 00 	sts	0x0068, r25
+ 118:	80 e3       	ldi	r24, 0x30	; 48
+ 11a:	80 93 6c 00 	sts	0x006C, r24
+ 11e:	78 94       	sei
+ 120:	a8 95       	wdr
+ 122:	fe cf       	rjmp	.-4      	; 0x120 <main+0x30>
+
+00000124 <_exit>:
+ 124:	f8 94       	cli
+
+00000126 <__stop_program>:
+ 126:	ff cf       	rjmp	.-2      	; 0x126 <__stop_program>

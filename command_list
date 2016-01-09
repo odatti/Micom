@@ -1,0 +1,15 @@
+// ソースファイルをコンパイル
+avr-gcc test.c -mmcu=atmega88pa -Os -DF_CPU=8000000UL -o test.elf
+
+// ELFファイルからHEXファイルを生成する
+avr-objcopy -j.text -j.data -O ihex test.elf test.hex
+
+シリアルターミナルの起動(数字は変わる？)
+cu -l /dev/tty.usbmodem1411 -s 4800
+
+// マイコンにHEXファイルをダウンロード
+// シリアルボードの設定をする（なにも表示されない）
+stty -F /dev/tty.usbmodem1411 4800 cs8 -cstopb -parenb
+
+// ユーザプログラムをマイコンに書き込む
+ascii-xfr -dsvn test.hex > /dev/tty.usermodem1411

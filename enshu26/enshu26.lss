@@ -1,0 +1,177 @@
+
+enshu26.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .data         00000000  00800100  00000118  000001ac  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  1 .text         00000118  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .bss          00000001  00800100  00800100  000001ac  2**0
+                  ALLOC
+  3 .comment      00000011  00000000  00000000  000001ac  2**0
+                  CONTENTS, READONLY
+  4 .debug_aranges 00000040  00000000  00000000  000001c0  2**3
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_info   0000017c  00000000  00000000  00000200  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_abbrev 00000028  00000000  00000000  0000037c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_line   000000b6  00000000  00000000  000003a4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	19 c0       	rjmp	.+50     	; 0x34 <__ctors_end>
+   2:	28 c0       	rjmp	.+80     	; 0x54 <__bad_interrupt>
+   4:	27 c0       	rjmp	.+78     	; 0x54 <__bad_interrupt>
+   6:	26 c0       	rjmp	.+76     	; 0x54 <__bad_interrupt>
+   8:	25 c0       	rjmp	.+74     	; 0x54 <__bad_interrupt>
+   a:	24 c0       	rjmp	.+72     	; 0x54 <__bad_interrupt>
+   c:	23 c0       	rjmp	.+70     	; 0x54 <__bad_interrupt>
+   e:	22 c0       	rjmp	.+68     	; 0x54 <__bad_interrupt>
+  10:	21 c0       	rjmp	.+66     	; 0x54 <__bad_interrupt>
+  12:	20 c0       	rjmp	.+64     	; 0x54 <__bad_interrupt>
+  14:	1f c0       	rjmp	.+62     	; 0x54 <__bad_interrupt>
+  16:	1e c0       	rjmp	.+60     	; 0x54 <__bad_interrupt>
+  18:	1d c0       	rjmp	.+58     	; 0x54 <__bad_interrupt>
+  1a:	1c c0       	rjmp	.+56     	; 0x54 <__bad_interrupt>
+  1c:	1b c0       	rjmp	.+54     	; 0x54 <__bad_interrupt>
+  1e:	1a c0       	rjmp	.+52     	; 0x54 <__bad_interrupt>
+  20:	19 c0       	rjmp	.+50     	; 0x54 <__bad_interrupt>
+  22:	18 c0       	rjmp	.+48     	; 0x54 <__bad_interrupt>
+  24:	17 c0       	rjmp	.+46     	; 0x54 <__bad_interrupt>
+  26:	16 c0       	rjmp	.+44     	; 0x54 <__bad_interrupt>
+  28:	15 c0       	rjmp	.+42     	; 0x54 <__bad_interrupt>
+  2a:	14 c0       	rjmp	.+40     	; 0x54 <__bad_interrupt>
+  2c:	13 c0       	rjmp	.+38     	; 0x54 <__bad_interrupt>
+  2e:	12 c0       	rjmp	.+36     	; 0x54 <__bad_interrupt>
+  30:	11 c0       	rjmp	.+34     	; 0x54 <__bad_interrupt>
+  32:	10 c0       	rjmp	.+32     	; 0x54 <__bad_interrupt>
+
+00000034 <__ctors_end>:
+  34:	11 24       	eor	r1, r1
+  36:	1f be       	out	0x3f, r1	; 63
+  38:	cf ef       	ldi	r28, 0xFF	; 255
+  3a:	d4 e0       	ldi	r29, 0x04	; 4
+  3c:	de bf       	out	0x3e, r29	; 62
+  3e:	cd bf       	out	0x3d, r28	; 61
+
+00000040 <__do_clear_bss>:
+  40:	21 e0       	ldi	r18, 0x01	; 1
+  42:	a0 e0       	ldi	r26, 0x00	; 0
+  44:	b1 e0       	ldi	r27, 0x01	; 1
+  46:	01 c0       	rjmp	.+2      	; 0x4a <.do_clear_bss_start>
+
+00000048 <.do_clear_bss_loop>:
+  48:	1d 92       	st	X+, r1
+
+0000004a <.do_clear_bss_start>:
+  4a:	a1 30       	cpi	r26, 0x01	; 1
+  4c:	b2 07       	cpc	r27, r18
+  4e:	e1 f7       	brne	.-8      	; 0x48 <.do_clear_bss_loop>
+  50:	02 d0       	rcall	.+4      	; 0x56 <main>
+  52:	60 c0       	rjmp	.+192    	; 0x114 <_exit>
+
+00000054 <__bad_interrupt>:
+  54:	d5 cf       	rjmp	.-86     	; 0x0 <__vectors>
+
+00000056 <main>:
+  56:	2f ef       	ldi	r18, 0xFF	; 255
+  58:	24 b9       	out	0x04, r18	; 4
+  5a:	2f e0       	ldi	r18, 0x0F	; 15
+  5c:	27 b9       	out	0x07, r18	; 7
+  5e:	20 ef       	ldi	r18, 0xF0	; 240
+  60:	2a b9       	out	0x0a, r18	; 10
+  62:	20 e3       	ldi	r18, 0x30	; 48
+  64:	28 b9       	out	0x08, r18	; 8
+  66:	1b b8       	out	0x0b, r1	; 11
+  68:	15 b8       	out	0x05, r1	; 5
+  6a:	26 b1       	in	r18, 0x06	; 6
+  6c:	30 e0       	ldi	r19, 0x00	; 0
+  6e:	20 95       	com	r18
+  70:	30 95       	com	r19
+  72:	64 e0       	ldi	r22, 0x04	; 4
+  74:	35 95       	asr	r19
+  76:	27 95       	ror	r18
+  78:	6a 95       	dec	r22
+  7a:	e1 f7       	brne	.-8      	; 0x74 <main+0x1e>
+  7c:	62 2f       	mov	r22, r18
+  7e:	63 70       	andi	r22, 0x03	; 3
+  80:	60 93 00 01 	sts	0x0100, r22
+  84:	20 e0       	ldi	r18, 0x00	; 0
+  86:	30 e0       	ldi	r19, 0x00	; 0
+  88:	7f ef       	ldi	r23, 0xFF	; 255
+  8a:	a8 95       	wdr
+  8c:	80 3d       	cpi	r24, 0xD0	; 208
+  8e:	47 e0       	ldi	r20, 0x07	; 7
+  90:	94 07       	cpc	r25, r20
+  92:	10 f4       	brcc	.+4      	; 0x98 <main+0x42>
+  94:	01 96       	adiw	r24, 0x01	; 1
+  96:	15 c0       	rjmp	.+42     	; 0xc2 <main+0x6c>
+  98:	86 b1       	in	r24, 0x06	; 6
+  9a:	90 e0       	ldi	r25, 0x00	; 0
+  9c:	80 95       	com	r24
+  9e:	90 95       	com	r25
+  a0:	44 e0       	ldi	r20, 0x04	; 4
+  a2:	95 95       	asr	r25
+  a4:	87 95       	ror	r24
+  a6:	4a 95       	dec	r20
+  a8:	e1 f7       	brne	.-8      	; 0xa2 <main+0x4c>
+  aa:	83 70       	andi	r24, 0x03	; 3
+  ac:	90 91 00 01 	lds	r25, 0x0100
+  b0:	98 17       	cp	r25, r24
+  b2:	61 f1       	breq	.+88     	; 0x10c <main+0xb6>
+  b4:	5f 5f       	subi	r21, 0xFF	; 255
+  b6:	5f 31       	cpi	r21, 0x1F	; 31
+  b8:	10 f0       	brcs	.+4      	; 0xbe <main+0x68>
+  ba:	80 93 00 01 	sts	0x0100, r24
+  be:	80 e0       	ldi	r24, 0x00	; 0
+  c0:	90 e0       	ldi	r25, 0x00	; 0
+  c2:	40 91 00 01 	lds	r20, 0x0100
+  c6:	64 17       	cp	r22, r20
+  c8:	b1 f0       	breq	.+44     	; 0xf6 <main+0xa0>
+  ca:	41 30       	cpi	r20, 0x01	; 1
+  cc:	19 f0       	breq	.+6      	; 0xd4 <main+0x7e>
+  ce:	42 30       	cpi	r20, 0x02	; 2
+  d0:	39 f0       	breq	.+14     	; 0xe0 <main+0x8a>
+  d2:	11 c0       	rjmp	.+34     	; 0xf6 <main+0xa0>
+  d4:	2a 3f       	cpi	r18, 0xFA	; 250
+  d6:	31 05       	cpc	r19, r1
+  d8:	64 f0       	brlt	.+24     	; 0xf2 <main+0x9c>
+  da:	2a 5f       	subi	r18, 0xFA	; 250
+  dc:	31 09       	sbc	r19, r1
+  de:	0b c0       	rjmp	.+22     	; 0xf6 <main+0xa0>
+  e0:	26 50       	subi	r18, 0x06	; 6
+  e2:	3f 4f       	sbci	r19, 0xFF	; 255
+  e4:	29 3e       	cpi	r18, 0xE9	; 233
+  e6:	63 e0       	ldi	r22, 0x03	; 3
+  e8:	36 07       	cpc	r19, r22
+  ea:	28 f0       	brcs	.+10     	; 0xf6 <main+0xa0>
+  ec:	28 ee       	ldi	r18, 0xE8	; 232
+  ee:	33 e0       	ldi	r19, 0x03	; 3
+  f0:	02 c0       	rjmp	.+4      	; 0xf6 <main+0xa0>
+  f2:	20 e0       	ldi	r18, 0x00	; 0
+  f4:	30 e0       	ldi	r19, 0x00	; 0
+  f6:	00 97       	sbiw	r24, 0x00	; 0
+  f8:	09 f4       	brne	.+2      	; 0xfc <main+0xa6>
+  fa:	75 b9       	out	0x05, r23	; 5
+  fc:	82 17       	cp	r24, r18
+  fe:	93 07       	cpc	r25, r19
+ 100:	11 f0       	breq	.+4      	; 0x106 <main+0xb0>
+ 102:	64 2f       	mov	r22, r20
+ 104:	c2 cf       	rjmp	.-124    	; 0x8a <main+0x34>
+ 106:	65 b1       	in	r22, 0x05	; 5
+ 108:	15 b8       	out	0x05, r1	; 5
+ 10a:	fb cf       	rjmp	.-10     	; 0x102 <main+0xac>
+ 10c:	80 e0       	ldi	r24, 0x00	; 0
+ 10e:	90 e0       	ldi	r25, 0x00	; 0
+ 110:	50 e0       	ldi	r21, 0x00	; 0
+ 112:	d7 cf       	rjmp	.-82     	; 0xc2 <main+0x6c>
+
+00000114 <_exit>:
+ 114:	f8 94       	cli
+
+00000116 <__stop_program>:
+ 116:	ff cf       	rjmp	.-2      	; 0x116 <__stop_program>
