@@ -4,7 +4,7 @@
 #include <avr/eeprom.h>
 #include <stdint.h>
 #include <stdlib.h>
-
+#define SW ((~PINC>>4)&3)
 #define N 4
 #define EEPADDR 0x000
 
@@ -60,8 +60,10 @@ ISR(TIMER0_COMPA_vect){
 	scan = (scan + 1) & 7;
 	sc = ~(1 << scan);
 	PORTC = sc & 0x0f;
+	PORTC |= 0x30;
 	PORTD = sc & 0xf0;
 	PORTB = led[n][7 - scan];
+/*
 	if(cnt < 100){
 		n = rand() % N;
 		OCR2A = cnt;
@@ -74,6 +76,7 @@ ISR(TIMER0_COMPA_vect){
 		TCCR2B = 0x04;
 	}
 	cnt++;
+*/
 }
 
 void init_rand(){
@@ -83,9 +86,11 @@ void init_rand(){
 
 int main()
 {
+	int flag = 0;
 	DDRB = 0xff;
 	DDRC = 0x0f;
 	DDRD = 0xfa;
+	PORTC = 0x30;
 	
 	OCR0A = 249;
 	TCCR0A = 2;
@@ -96,12 +101,20 @@ int main()
 	TCCR2B = 0x04;
 	OCR2A = 238;
 	
-	init_rand();
 	n = rand() % N;
 	sei();
 
 	while(1){
 		wdt_reset(); // ウォッチドッグタイマのリセット
+		if(flag == 0){
+			init_rand();
+			n = rand() % N;
+			if(SW == 0x01)
+				flag = 1;
+		}else{
+			if(SW == 0x01)
+				n = rand() % N;
+		}
 	}
 	return 0;
 }
