@@ -8,26 +8,32 @@ volatile unsigned char led[8] = {
 
 ISR(ADC_vect){
 	int n;
+int i;
 	char val;
 
 	static char comp[9][2] = {
-		{90,0xFF},
-		{80,0x7F},
-		{70,0x3F},
-		{60,0x1F},
-		{50,0x0F},
-		{40,0x07},
-		{30,0x03},
-		{20,0x01},
-		{10,0x00},
+		{16,0xFF},
+		{14,0x7F},
+		{12,0x3F},
+		{10,0x1F},
+		{8,0x0F},
+		{6,0x07},
+		{4,0x03},
+		{2,0x01},
+		{1,0x00},
 	};
 	val = ADCH;
-	for(n = 0;n < 7;n++){
-		led[n] = led[n + 1];
+	for(n = 0;n < 8;n++){
+		// led[n] = led[n + 1];
+		led[n] <<= 1;
 	}
 	for(n = 0;n < 9;n++){
 		if(comp[n][0] < val){
-			led[7] = comp[n][1];			
+			// led[7] = comp[n][1];			
+			for(i = 0;i < 8;i++){
+			led[i] |= (comp[n][1] >> 7-i) & 0x01;			
+				// led[i] |= 0x01;			
+			}
 			break;
 		}
 	}
