@@ -7,6 +7,14 @@
 #define LED_ON 1
 #define LED_MIDDLE 5
 
+#define SW_INTERVAL 3000UL
+#define SW ((~PINC>>4)&3)
+
+void game_init();
+void led_init();
+void switch_init();
+void timer_init();
+
 typedef unsigned char uchar;
 static volatile uchar user;
 
@@ -20,42 +28,16 @@ volatile int ledCount;
 // ダイナミックスキャン用
 static volatile uchar scan;
 
-/*
+// スイッチとチャタリング対策に使う変数
 volatile uchar sw;
+volatile uchar swnow;
+volatile uchar swnew;
+volatile unsigned swcnt;
+// ピン変化割り込みとスイッチの処理に使用
+volatile unsigned char pc = 0;
 
-static volatile uchar clk;
-
-static volatile uchar delay;
-
-static volatile uchar swnow;
-static volatile uchar swnew;
-static volatile uchar swcnt;
-*/
 /*
 ISR(TIMER0_COMPA_vect){
-	unsigned char sc;
-	PORTB = 0;
-	scan = (scan + 1) & 7;
-	sc = ~(1 << scan);
-	PORTC = 0x30 | (sc & 0x0f);
-	PORTD = sc & 0xf0;
-	PORTB = led[scan];
-
-	sc = PINC & 0x30;
-	if(sc != swnow){
-		if(sc == swnew){
-			if(++swcnt > 20){
-				swnow = swnew;
-				sw = (swnow >> 4) ^ 3;
-			}
-		}
-		else{
-		swnew = sc;
-		swcnt = 0;
-		}
-		rnd = rnd + scan + sw;
-	}
-	
 	if(++clk >= 50){
 		clk = 0;
 		if(delay)
@@ -72,91 +54,128 @@ ISR(TIMER0_COMPA_vect){
 
 
 
-
+// led走査処理(タイマカウンタ)
 ISR(TIMER2_COMPA_vect){
-	// LED走査処理
 	unsigned char sc;
 	int x;
-	PORTB = 0; // LED表示初期化
-	led[scan] = 0; // LED表示初期化
+	PORTB = 0; // led表示初期化
+	led[scan] = 0; // led表示初期化
 	scan = (scan + 1) & 7;
 	sc = ~(1 << scan);
 	PORTC = 0x30 | (sc & 0x0f);// スイッチ用のプルアップを兼ねる
 	PORTD = sc & 0xf0;
-	// PORTB = led[scan];
 	
-	// 4段階の明るさでLEDを点滅させている
+	// 4段階の明るさでledを点滅させている
 	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
 	for(x=0;x<LED_SIZE;x++){
 		if(ledCount % ledPower[scan][x] == 0){
-		// if(ledCount % (1+2*x) == 0){
 			uchar temp = 1 << (LED_SIZE - x - 1);
 			led[scan] |= temp;
 		}
 	}
 	PORTB = led[scan];
-
-	//sc = PINC & 0x30;
 }
 
+// スイッチのピン変化割り込み
+ISR(PCINT1_vect){
+	if(pc == 0){
+		pc = 1;
+	}
+	// ブロックしているピン変化割り込みをキャンセル
+	PCIFR |= _BV(PCIF1);
+}
 
 int main(void){
-	int x,y;
-	ledCount = 0;
-	for(y=0;y<LED_SIZE;y++){
-		for(x=0;x<LED_SIZE;x++){
-			switch(x%4){
-				case 0:
-					ledPower[y][x] = LED_ON;
-					break;
-				case 1:
-					ledPower[y][x] = LED_MIDDLE;
-					break;
-				default:
-					ledPower[y][x] = LED_OFF;
-					break;
-			}
-		}
-	}
+	// 初期化
+	game_init();
+	led_init();
+	switch_init();
+	timer_init();
 
-
-	DDRB = 0xff;
-	DDRC = 0x0f;
-	DDRD = 0xfa;
-	PORTC = 0x30;
-	PORTD = 0x00;
-	PORTB = 0xff;
 	
-	// LED捜査用のタイマカウンタ
-	TCCR2A = 2; // CTCモード
-	TCCR2B = 3; // PS=32
-	OCR2A = 4000;
-	TIMSK2 |= (1 << OCIE2A);
 
 /*
-	swnow = 0x30;
-	swnew = 0x30;
-	sw = 0;
 	OCR0A = 249;
 	TCCR0A = 2;
-	TCCR2B = 3;
+	TCCR0B = 3;
 	TIMSK0 |= (1 << OCIE0A);
 
-	TCCR2A = 0;
-	TCCR2B = 0x44;
-	
 */
+	// 割り込み処理を実行
 	sei();
 	for(user=0;;){
 		wdt_reset();
-/*
-		if(user){
-			user_main();
-			user = 0;
+		if(pc){
+			swcnt = (swcnt < SW_INTERVAL) ? swcnt + 1 : 0;
+			if(swcnt == 0){
+				swnow = SW;
+				pc = 0;
+			}
 		}
-*/
+
+		// スイッチの結果を更新
+		if(swnow != sw){
+			sw = swnow;
+			switch(sw){
+				case 0:
+					break;	
+				case 1:
+					break;	
+				case 2:
+					break;	
+				case 3:
+					break;	
+			}
+		}
 	}
 	return 0;
 }
 
 
+// ゲームに関するものを初期化する関数
+void game_init(){
+	int x,y;
+	ledCount = 0;
+	for(y=0;y<LED_SIZE;y++){
+		for(x=0;x<LED_SIZE;x++){
+			ledPower[y][x] = LED_OFF;
+		}
+	}
+	ledPower[3][3] = LED_ON;
+	ledPower[4][4] = LED_ON;
+	ledPower[3][4] = LED_MIDDLE;
+	ledPower[4][3] = LED_MIDDLE;
+	
+}
+
+// LEDを表示するために必要な準備
+void led_init(){
+	// LED表示するための変数
+	DDRB = 0xff;
+	DDRC = 0x0f;
+	DDRD = 0xfa;
+	PORTC = 0x30;
+	PORTD = 0x00;
+	PORTB = 0x00;
+	// LED捜査用のタイマカウンタ
+	TCCR2A = 2; // CTCモード
+	TCCR2B = 3; // PS=32
+	OCR2A = 4000;
+	TIMSK2 |= (1 << OCIE2A);
+}
+
+// スイッチを使用するための初期化
+void switch_init(){
+	// PORTCのピン変化割り込み有効
+	PCICR |= _BV(PCIE1);
+	// 割り込みを認めるビット位置を指定
+	PCMSK1 = _BV(PCINT12) | _BV(PCINT13);
+	swnow = 0x30;
+	swnew = 0x30;
+	sw = 0;
+}
+
+// タイマカウンタを使用するための初期化
+void timer_init(){
+
+}
