@@ -6,7 +6,9 @@
 
 volatile uchar sw;
 volatile uchar led[LED_SZ];
-
+int led_light[LED_SZ];
+int led_light_cnt[LED_SZ];
+int light_cnt;
 static volatile uchar scan;
 
 static volatile uchar clk;
@@ -25,16 +27,21 @@ static volatile uchar rnd;
 
 extern void user_init(void);
 extern void user_main(void);
-
 ISR(TIMER0_COMPA_vect){
+	int x;
 	unsigned char sc;
 	PORTB = 0;
 	scan = (scan + 1) & 7;
 	sc = ~(1 << scan);
 	PORTC = 0x30 | (sc & 0x0f);
 	PORTD = sc & 0xf0;
-	PORTB = led[scan];
-
+	led_light_cnt[scan]++;
+	if(led_light_cnt[scan] == led_light[scan]){
+		//PORTB = led[scan];
+		PORTB = 0xff;
+		led_light_cnt[scan]=0;
+	}else{
+	}
 	sc = PINC & 0x30;
 	if(sc != swnow){
 		if(sc == swnew){
@@ -64,6 +71,12 @@ ISR(TIMER0_COMPA_vect){
 }
 
 int main(void){
+	int x;
+	for(x = 0;x < LED_SZ;x++){
+		led_light[x] = (x+1)*5;
+		led_light_cnt[x] = 0;
+	}
+	light_cnt = 0;
 	DDRB = 0xff;
 	DDRC = 0x0f;
 	DDRD = 0xfa;
@@ -73,9 +86,11 @@ int main(void){
 	swnew = 0x30;
 	sw = 0;
 
-	OCR0A = 249;
+	OCR0A = 10;
+	//OCR0A = 249;
 	TCCR0A = 2;
-	TCCR2B = 3;
+	TCCR2B = 0;
+	//TCCR2B = 3;
 	TIMSK0 |= (1 << OCIE0A);
 
 	TCCR2A = 0;
