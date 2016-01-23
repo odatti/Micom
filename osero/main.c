@@ -3,27 +3,26 @@
 #include <avr/wdt.h>
 
 #define LED_SIZE 8
-#define LED_OFF 100
-#define LED_ON 0
-#define LED_MIDDLE 50
-
-typedef struct MY_LED{
-	unsigned int state;
-	unsigned int count;
-}MY_LED;
-
+#define LED_OFF 1000
+#define LED_ON 1
+#define LED_MIDDLE 5
 
 typedef unsigned char uchar;
-volatile uchar led[LED_SIZE];
 static volatile uchar user;
-static volatile MY_LED myLed[LED_SIZE][LED_SIZE];
 
+
+// LED表示用の配列
+volatile uchar led[LED_SIZE];
+// LEDの明るさ情報
+volatile int ledPower[LED_SIZE][LED_SIZE];
+// LEDの明るさを制御するためのカウント変数
+volatile int ledCount;
+// ダイナミックスキャン用
+static volatile uchar scan;
 
 /*
 volatile uchar sw;
-volatile uchar led[LED_SZ];
 
-static volatile uchar scan;
 static volatile uchar clk;
 
 static volatile uchar delay;
@@ -71,17 +70,56 @@ ISR(TIMER0_COMPA_vect){
 }
 */
 
-int cnt;
+
+
+
 ISR(TIMER2_COMPA_vect){
-	if(++cnt == 500){
-		cnt = 0;
-		PORTB = ~PORTB;
+	// LED走査処理
+	unsigned char sc;
+	int x;
+	PORTB = 0; // LED表示初期化
+	led[scan] = 0; // LED表示初期化
+	scan = (scan + 1) & 7;
+	sc = ~(1 << scan);
+	PORTC = 0x30 | (sc & 0x0f);// スイッチ用のプルアップを兼ねる
+	PORTD = sc & 0xf0;
+	// PORTB = led[scan];
+	
+	// 4段階の明るさでLEDを点滅させている
+	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
+	for(x=0;x<LED_SIZE;x++){
+		if(ledCount % ledPower[scan][x] == 0){
+		// if(ledCount % (1+2*x) == 0){
+			uchar temp = 1 << (LED_SIZE - x - 1);
+			led[scan] |= temp;
+		}
 	}
+	PORTB = led[scan];
+
+	//sc = PINC & 0x30;
 }
 
 
 int main(void){
-	cnt = 0;
+	int x,y;
+	ledCount = 0;
+	for(y=0;y<LED_SIZE;y++){
+		for(x=0;x<LED_SIZE;x++){
+			switch(x%4){
+				case 0:
+					ledPower[y][x] = LED_ON;
+					break;
+				case 1:
+					ledPower[y][x] = LED_MIDDLE;
+					break;
+				default:
+					ledPower[y][x] = LED_OFF;
+					break;
+			}
+		}
+	}
+
+
 	DDRB = 0xff;
 	DDRC = 0x0f;
 	DDRD = 0xfa;
@@ -89,9 +127,10 @@ int main(void){
 	PORTD = 0x00;
 	PORTB = 0xff;
 	
-	TCCR2A = 2;
-	TCCR2B = 4;
-	OCR2A = 249;
+	// LED捜査用のタイマカウンタ
+	TCCR2A = 2; // CTCモード
+	TCCR2B = 3; // PS=32
+	OCR2A = 4000;
 	TIMSK2 |= (1 << OCIE2A);
 
 /*
