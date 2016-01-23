@@ -8,7 +8,9 @@
 #define N 4
 #define EEPADDR 0x000
 
+volatile unsigned char value;
 volatile char n;
+
 volatile unsigned char led[N][8] = {
 	{
 		0b00001000,	
@@ -53,6 +55,7 @@ volatile unsigned char led[N][8] = {
 };
 
 ISR(TIMER0_COMPA_vect){
+	led[n][7] |= value & 0xff;
 	static int cnt;
 	static unsigned char scan;
 	unsigned char sc;
@@ -63,24 +66,11 @@ ISR(TIMER0_COMPA_vect){
 	PORTC |= 0x30;
 	PORTD = sc & 0xf0;
 	PORTB = led[n][7 - scan];
-/*
-	if(cnt < 100){
-		n = rand() % N;
-		OCR2A = cnt;
-	}
-	if(cnt == 100){
-		TCCR2B = 0x0;
-	}
-	if(500 <= cnt){
-		cnt = 0;
-		TCCR2B = 0x04;
-	}
-	cnt++;
-*/
 }
 
 void init_rand(){
-	srand(eeprom_read_word((uint16_t *) EEPADDR));
+	// srand(eeprom_read_word((uint16_t *) EEPADDR));
+	srand(value);
 	eeprom_write_word((uint16_t *) EEPADDR, rand());
 }
 
@@ -100,6 +90,9 @@ int main()
 	TCCR2A = 0x12;
 	TCCR2B = 0x04;
 	OCR2A = 238;
+
+	value = ADCH;
+	init_rand();
 	
 	n = rand() % N;
 	sei();
@@ -107,8 +100,6 @@ int main()
 	while(1){
 		wdt_reset(); // ウォッチドッグタイマのリセット
 		if(flag == 0){
-			init_rand();
-			n = rand() % N;
 			if(SW == 0x01)
 				flag = 1;
 		}else{
