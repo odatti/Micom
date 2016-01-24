@@ -1,3 +1,4 @@
+// include
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -15,9 +16,18 @@ void led_init();
 void switch_init();
 void timer_init();
 
+void game_main();
+
 typedef unsigned char uchar;
 static volatile uchar user;
 
+
+// プレイヤーの操作に関する構造体
+typedef struct TARGET{
+	int x,y;
+	int state;
+	int turn;
+}TARGET;
 
 // LED表示用の配列
 volatile uchar led[LED_SIZE];
@@ -36,21 +46,24 @@ volatile unsigned swcnt;
 // ピン変化割り込みとスイッチの処理に使用
 volatile unsigned char pc = 0;
 
-/*
+// プレイヤーの操作に関する変数
+TARGET target;
+static volatile uchar clk;
+static volatile int cursor_clk;
+
+
+// 2ms毎に呼ばれる関数（タイマカウンタ）
 ISR(TIMER0_COMPA_vect){
+	// 100msごとに
 	if(++clk >= 50){
 		clk = 0;
-		if(delay)
-			delay--;
-
-		if(period){
-			if(--period == 0)
-				TCCR2A = 0;
-		}
 		user = 1;
 	}
+	if(++cursor_clk >= 500){
+		cursor_clk = 0;
+		target.state = (target.state == LED_ON) ? LED_OFF : target.turn;
+	} 
 }
-*/
 
 
 
@@ -67,6 +80,8 @@ ISR(TIMER2_COMPA_vect){
 	
 	// 4段階の明るさでledを点滅させている
 	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
+	// ターゲットのいる場所をONかOFFにする
+	ledPower[target.y][target.x] = target.state;
 	for(x=0;x<LED_SIZE;x++){
 		if(ledCount % ledPower[scan][x] == 0){
 			uchar temp = 1 << (LED_SIZE - x - 1);
@@ -89,20 +104,13 @@ int main(void){
 	// 初期化
 	game_init();
 	led_init();
-	switch_init();
 	timer_init();
+	switch_init();
 
-	
-
-/*
-	OCR0A = 249;
-	TCCR0A = 2;
-	TCCR0B = 3;
-	TIMSK0 |= (1 << OCIE0A);
-
-*/
 	// 割り込み処理を実行
 	sei();
+
+	// ゲームを回すforループ
 	for(user=0;;){
 		wdt_reset();
 		if(pc){
@@ -122,31 +130,22 @@ int main(void){
 				case 1:
 					break;	
 				case 2:
+					ledPower[6][6] = LED_ON;
 					break;	
 				case 3:
 					break;	
 			}
+		}
+
+		if(user){
+			game_main();
+			user=0;
 		}
 	}
 	return 0;
 }
 
 
-// ゲームに関するものを初期化する関数
-void game_init(){
-	int x,y;
-	ledCount = 0;
-	for(y=0;y<LED_SIZE;y++){
-		for(x=0;x<LED_SIZE;x++){
-			ledPower[y][x] = LED_OFF;
-		}
-	}
-	ledPower[3][3] = LED_ON;
-	ledPower[4][4] = LED_ON;
-	ledPower[3][4] = LED_MIDDLE;
-	ledPower[4][3] = LED_MIDDLE;
-	
-}
 
 // LEDを表示するために必要な準備
 void led_init(){
@@ -175,7 +174,34 @@ void switch_init(){
 	sw = 0;
 }
 
+// ゲームの内容を初期化する関数
+void game_init(){
+	int x, y;
+	ledCount = 0;
+	for(y = 0;y < LED_SIZE;y++){
+		for(x=0;x < LED_SIZE;x++){
+			ledPower[y][x] = LED_OFF;
+		}
+		led[y] = 0x00;
+	}
+	ledPower[3][3] = LED_ON;
+	ledPower[4][4] = LED_ON;
+	ledPower[3][4] = LED_MIDDLE;
+	ledPower[4][3] = LED_MIDDLE;
+
+	target.x = 2;
+	target.y = 4;
+	target.state = target.turn = LED_ON;
+}
+
 // タイマカウンタを使用するための初期化
 void timer_init(){
+	OCR0A = 249; // 2ms
+	TCCR0A = 2; // CTC MODE
+	TCCR0B = 3; // 64PS
+	TIMSK0 |= (1 << OCIE0A);
+}
 
+// ゲームの本体
+void game_main(){
 }
