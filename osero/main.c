@@ -156,8 +156,11 @@ int main(void){
 					target.y = (target.y > 0) ? target.y - 1 : LED_SIZE - 1;
 					break;	
 				case 3:
-					putStone(target.x, target.y, target.turn);
-					if(isFinishGame(target.turn) > 0) gameState = FINISH;
+					if(gameState == PLAYING)
+					{
+						putStone(target.x, target.y, target.turn);
+						if(isFinishGame(target.turn) > 0) gameState = FINISH;
+					}
 					break;	
 			}
 		}
@@ -284,7 +287,11 @@ int countTurnOver(int turn, int y, int x, int d, int e)
 	int i;
 	int aite = (turn == LED_ON) ? LED_MIDDLE : LED_ON;
 
-	for (i = 1; ledPower[y+i*d][x+i*e] ==aite; i++) {};        
+	for (i = 1; ledPower[y+i*d][x+i*e] ==aite; i++) {
+		if(y+i*e < 0 || y+i*e > 8 || x+i*e < 0 || x+i*e > 8){
+			break;
+		}
+	};        
 
 	if (ledPower[y+i*d][x+i*e] == turn) {                             
 		return i-1;   
@@ -324,7 +331,6 @@ int isFinishGame(int turn){
 
 void sortLED(){
 	int ix=0,iy=0;
-	int ix2=LED_SIZE-1,iy2=LED_SIZE-1;
 	int x, y;
 	for(y = 0;y < LED_SIZE;y++){
 		for(x = 0;x < LED_SIZE;x++){
@@ -332,15 +338,11 @@ void sortLED(){
 				int temp = ledPower[iy][ix];
 				ledPower[iy][ix] = ledPower[y][x];
 				ledPower[y][x] = temp;
-				ix = (ix < LED_SIZE-1) ? ix + 1:0;
-				iy = (iy < LED_SIZE-1) ? iy + 1:0;
-			}
-			if(ledPower[y][x] == LED_MIDDLE){
-				int temp = ledPower[iy2][ix2];
-				ledPower[iy2][ix2] = ledPower[y][x];
-				ledPower[y][x] = temp;
-				ix2 = (ix2 > 0) ? ix2 - 1:LED_SIZE-1;
-				iy2 = (iy2 > 0) ? iy2 - 1:LED_SIZE-1;
+				ix++;
+				if(ix == LED_SIZE){
+					ix = 0;
+					iy++;
+				}
 			}
 		}
 	}
