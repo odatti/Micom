@@ -11,6 +11,13 @@
 #define SW_INTERVAL 6000UL
 #define SW ((~PINC>>4)&3)
 
+enum
+{
+	PLAYING,
+	FINISH,
+	FINISHED
+};
+
 void game_init();
 void led_init();
 void switch_init();
@@ -18,11 +25,12 @@ void timer_init();
 
 void game_main();
 
-// 石をおけるか否かの判断
 int judgePutStone(int x, int y, int turn);
-// 石を置く処理
 void putStone(int x, int y, int turn);
 int countTurnOver(int turn, int x, int y, int d, int e);
+// まだ続くなら0, もう終わるならLED_ONの個数を返す
+int isFinishGame(int turn);
+void sortLED();
 
 typedef unsigned char uchar;
 static volatile uchar user;
@@ -56,6 +64,8 @@ volatile unsigned char pc = 0;
 TARGET target;
 static volatile uchar clk;
 static volatile int cursor_clk;
+static volatile int gameState;
+
 
 
 // 2ms毎に呼ばれる関数（タイマカウンタ）
@@ -69,11 +79,9 @@ ISR(TIMER0_COMPA_vect){
 	// 0.5sごとにカーソルを点滅させる処理
 	if(++cursor_clk >= 250){
 		cursor_clk = 0;
-		target.state = (target.state == LED_ON) ? LED_OFF : LED_ON;
+		target.state = (target.state == target.turn) ? LED_OFF : target.turn;
 	} 
 }
-
-
 
 // led走査処理(タイマカウンタ)
 ISR(TIMER2_COMPA_vect){
@@ -89,18 +97,18 @@ ISR(TIMER2_COMPA_vect){
 	// 4段階の明るさでledを点滅させている
 	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
 	for(x=0;x<LED_SIZE;x++){
-		if(ledCount % ledPower[scan][x] == 0){
+		int timing = 1;
+		// ターゲットのいる場所をONかOFFにする
+		if(scan == target.y && target.x == x){
+			timing = target.state;
+		}else{
+			timing = ledPower[scan][x];
+		}
+
+		if(ledCount % timing == 0){
 			uchar temp = 1 << (LED_SIZE - x - 1);
 			led[scan] |= temp;
 		}
-	}
-	// ターゲットのいる場所をONかOFFにする
-	if(scan == target.y){
-		uchar temp = 1 << (LED_SIZE - target.x - 1);
-		if(target.state == LED_ON)
-			led[scan] |= temp;
-		else
-			led[scan] &= ~temp;
 	}
 	PORTB = led[scan];
 }
@@ -149,6 +157,7 @@ int main(void){
 					break;	
 				case 3:
 					putStone(target.x, target.y, target.turn);
+					if(isFinishGame(target.turn) > 0) gameState = FINISH;
 					break;	
 			}
 		}
@@ -171,7 +180,7 @@ void led_init(){
 	DDRD = 0xfa;
 	PORTC = 0x30;
 	PORTD = 0x00;
-	PORTB = 0x00;
+	PORTB = 0xff;
 	// LED捜査用のタイマカウンタ
 	TCCR2A = 2; // CTCモード
 	TCCR2B = 3; // PS=32
@@ -208,6 +217,7 @@ void game_init(){
 	target.x = 2;
 	target.y = 4;
 	target.state = target.turn = LED_ON;
+	gameState = 0;
 }
 
 // タイマカウンタを使用するための初期化
@@ -220,14 +230,23 @@ void timer_init(){
 
 // ゲームの本体
 void game_main(){
-
+	switch(gameState){
+		case FINISH:
+			sortLED();
+			gameState = FINISHED;
+			break;
+		case FINISHED:
+		case PLAYING:
+		default:
+			break;
+	}
 }
 
 
 // 石をおけるか否かの判断
 int judgePutStone(int x, int y, int turn)
 {
-	if (y < 1 || y > 8 || x < 1 || x > 8) return 0;
+	if (y < 0 || y > 7 || x < 0 || x > 7) return 0;
 	if (ledPower[y][x] != LED_OFF) return 0;
 	if (countTurnOver(turn, y, x, -1,  0)) return 1;  // 上 
 	if (countTurnOver(turn, y, x,  1,  0)) return 1;  // 下 
@@ -273,3 +292,57 @@ int countTurnOver(int turn, int y, int x, int d, int e)
 		return 0;   
 	}
 }
+
+
+// まだ続くなら0, もう終わるならLED_ONの個数を返す
+int isFinishGame(int turn){
+	int x,y;
+	int on = 0;
+	
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			// 置く場所があるなら続けられる
+			if(judgePutStone(x,y,turn) == 1)
+				return 0;
+		}
+	}
+
+	// ONの個数を調べる
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			switch(ledPower[y][x]){
+				case LED_ON: on++; break;
+				case LED_MIDDLE:
+				case LED_OFF:
+				default: break;;
+			}
+		}
+	}
+	return on;
+}
+
+
+void sortLED(){
+	int ix=0,iy=0;
+	int ix2=LED_SIZE-1,iy2=LED_SIZE-1;
+	int x, y;
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			if(ledPower[y][x] == LED_ON){
+				int temp = ledPower[iy][ix];
+				ledPower[iy][ix] = ledPower[y][x];
+				ledPower[y][x] = temp;
+				ix = (ix < LED_SIZE-1) ? ix + 1:0;
+				iy = (iy < LED_SIZE-1) ? iy + 1:0;
+			}
+			if(ledPower[y][x] == LED_MIDDLE){
+				int temp = ledPower[iy2][ix2];
+				ledPower[iy2][ix2] = ledPower[y][x];
+				ledPower[y][x] = temp;
+				ix2 = (ix2 > 0) ? ix2 - 1:LED_SIZE-1;
+				iy2 = (iy2 > 0) ? iy2 - 1:LED_SIZE-1;
+			}
+		}
+	}
+}
+
