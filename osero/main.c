@@ -8,7 +8,7 @@
 #define LED_ON 1
 #define LED_MIDDLE 5
 
-#define SW_INTERVAL 3000UL
+#define SW_INTERVAL 6000UL
 #define SW ((~PINC>>4)&3)
 
 void game_init();
@@ -17,6 +17,12 @@ void switch_init();
 void timer_init();
 
 void game_main();
+
+// 石をおけるか否かの判断
+int judgePutStone(int x, int y, int turn);
+// 石を置く処理
+void putStone(int x, int y, int turn);
+int countTurnOver(int turn, int x, int y, int d, int e);
 
 typedef unsigned char uchar;
 static volatile uchar user;
@@ -54,14 +60,16 @@ static volatile int cursor_clk;
 
 // 2ms毎に呼ばれる関数（タイマカウンタ）
 ISR(TIMER0_COMPA_vect){
-	// 100msごとに
+	// 100msごとにgame_mainを起動する
 	if(++clk >= 50){
 		clk = 0;
 		user = 1;
 	}
-	if(++cursor_clk >= 500){
+
+	// 0.5sごとにカーソルを点滅させる処理
+	if(++cursor_clk >= 250){
 		cursor_clk = 0;
-		target.state = (target.state == LED_ON) ? LED_OFF : target.turn;
+		target.state = (target.state == LED_ON) ? LED_OFF : LED_ON;
 	} 
 }
 
@@ -80,13 +88,19 @@ ISR(TIMER2_COMPA_vect){
 	
 	// 4段階の明るさでledを点滅させている
 	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
-	// ターゲットのいる場所をONかOFFにする
-	ledPower[target.y][target.x] = target.state;
 	for(x=0;x<LED_SIZE;x++){
 		if(ledCount % ledPower[scan][x] == 0){
 			uchar temp = 1 << (LED_SIZE - x - 1);
 			led[scan] |= temp;
 		}
+	}
+	// ターゲットのいる場所をONかOFFにする
+	if(scan == target.y){
+		uchar temp = 1 << (LED_SIZE - target.x - 1);
+		if(target.state == LED_ON)
+			led[scan] |= temp;
+		else
+			led[scan] &= ~temp;
 	}
 	PORTB = led[scan];
 }
@@ -134,8 +148,7 @@ int main(void){
 					target.y = (target.y > 0) ? target.y - 1 : LED_SIZE - 1;
 					break;	
 				case 3:
-					ledPower[target.y][target.x] = target.turn;
-					target.turn = (target.turn = LED_ON) ? LED_MIDDLE : LED_ON;
+					putStone(target.x, target.y, target.turn);
 					break;	
 			}
 		}
@@ -207,4 +220,56 @@ void timer_init(){
 
 // ゲームの本体
 void game_main(){
+
+}
+
+
+// 石をおけるか否かの判断
+int judgePutStone(int x, int y, int turn)
+{
+	if (y < 1 || y > 8 || x < 1 || x > 8) return 0;
+	if (ledPower[y][x] != LED_OFF) return 0;
+	if (countTurnOver(turn, y, x, -1,  0)) return 1;  // 上 
+	if (countTurnOver(turn, y, x,  1,  0)) return 1;  // 下 
+	if (countTurnOver(turn, y, x,  0, -1)) return 1;  // 左 
+	if (countTurnOver(turn, y, x,  0,  1)) return 1;  // 右 
+	if (countTurnOver(turn, y, x, -1, -1)) return 1;  // 左上
+	if (countTurnOver(turn, y, x, -1,  1)) return 1;  // 右上
+	if (countTurnOver(turn, y, x,  1, -1)) return 1;  // 左下
+	if (countTurnOver(turn, y, x,  1,  1)) return 1;  // 右下
+	return 0;
+}
+
+// 石を置く処理
+void putStone(int x, int y, int turn){
+	int count, d, e, i;
+	if(judgePutStone(x,y,turn) == 0)
+		return;
+
+	for (d = -1; d <= 1; d++) {      // 上下方向
+		for (e = -1; e <= 1; e++) {  // 左右方向
+			if (d == 0 && e == 0) continue; 
+			count = countTurnOver(turn, y, x, d, e);
+			for (i = 1; i <= count; i++) {
+				ledPower[y+i*d][x+i*e] = turn; // 裏返す
+			}
+		}
+	}
+	ledPower[y][x] = turn; // 石を置く
+	target.turn = (target.turn == LED_ON) ? LED_MIDDLE : LED_ON;
+}
+
+// 石を置いたときにどれだけ石を裏返せるかを調べる
+int countTurnOver(int turn, int y, int x, int d, int e)
+{
+	int i;
+	int aite = (turn == LED_ON) ? LED_MIDDLE : LED_ON;
+
+	for (i = 1; ledPower[y+i*d][x+i*e] ==aite; i++) {};        
+
+	if (ledPower[y+i*d][x+i*e] == turn) {                             
+		return i-1;   
+	} else {
+		return 0;   
+	}
 }
