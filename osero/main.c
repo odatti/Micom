@@ -128,11 +128,14 @@ int main(void){
 				case 0:
 					break;	
 				case 1:
+					target.x = (target.x > 0) ? target.x - 1 : LED_SIZE - 1;
 					break;	
 				case 2:
-					ledPower[6][6] = LED_ON;
+					target.y = (target.y > 0) ? target.y - 1 : LED_SIZE - 1;
 					break;	
 				case 3:
+					ledPower[target.y][target.x] = target.turn;
+					target.turn = (target.turn = LED_ON) ? LED_MIDDLE : LED_ON;
 					break;	
 			}
 		}
