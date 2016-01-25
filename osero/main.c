@@ -2,6 +2,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
+#include <avr/eeprom.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #define LED_SIZE 8
 #define LED_OFF 1000
@@ -10,6 +13,8 @@
 
 #define SW_INTERVAL 6000UL
 #define SW ((~PINC>>4)&3)
+
+#define EEPADDR 0x000
 
 enum
 {
@@ -22,8 +27,11 @@ void game_init();
 void led_init();
 void switch_init();
 void timer_init();
+void rand_init();
 
 void game_main();
+
+void random_ai(int turn);
 
 int judgePutStone(int x, int y, int turn);
 void putStone(int x, int y, int turn);
@@ -66,6 +74,9 @@ static volatile uchar clk;
 static volatile int cursor_clk;
 static volatile int gameState;
 
+
+// ランダムを表現するためのカウンタ
+static volatile uchar rnd;
 
 
 // 2ms毎に呼ばれる関数（タイマカウンタ）
@@ -128,6 +139,7 @@ int main(void){
 	led_init();
 	timer_init();
 	switch_init();
+	rand_init();
 
 	// 割り込み処理を実行
 	sei();
@@ -156,6 +168,8 @@ int main(void){
 					target.y = (target.y < LED_SIZE - 1) ? target.y + 1 : 0;
 					break;	
 				case 3:
+					if(target.turn != LED_ON)
+						break;
 					if(gameState == PLAYING)
 					{
 						putStone(target.x, target.y, target.turn);
@@ -230,6 +244,10 @@ void timer_init(){
 	TCCR0B = 3; // 64PS
 	TIMSK0 |= (1 << OCIE0A);
 }
+void rand_init(){
+	srand(eeprom_read_word((uint16_t *) EEPADDR));
+	eeprom_write_word((uint16_t *) EEPADDR, rand());
+}
 
 // ゲームの本体
 void game_main(){
@@ -238,8 +256,11 @@ void game_main(){
 			sortLED();
 			gameState = FINISHED;
 			break;
-		case FINISHED:
 		case PLAYING:
+			if(target.turn == LED_MIDDLE)
+				random_ai(target.turn);
+			break;
+		case FINISHED:
 		default:
 			break;
 	}
@@ -345,5 +366,30 @@ void sortLED(){
 			}
 		}
 	}
+}
+
+void random_ai(int turn){
+	int x,y;
+	int putList[64];
+	int index = 0;
+	for(x = 0;x < 64;x++){
+		putList[64] = 0;
+	}
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			if(judgePutStone(x,y,turn) == 1){
+				putList[index] = y*LED_SIZE+x;
+				index++;
+			}
+		}
+	}
+	if(index==0)
+		return;
+	
+	index = putList[rand() % index];	
+	x = index % LED_SIZE;
+	y = (int)(index / LED_SIZE);
+	putStone(x, y, turn);
+	if(isFinishGame(target.turn) > 0) gameState = FINISH;
 }
 
