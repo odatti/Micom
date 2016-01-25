@@ -348,16 +348,30 @@ int isFinishGame(int turn){
 	return on;
 }
 
-
+void replace(int x, int y, int ix, int iy){
+	int temp = ledPower[iy][ix];
+	ledPower[iy][ix] = ledPower[y][x];
+	ledPower[y][x] = temp;
+}
 void sortLED(){
 	int ix=0,iy=0;
 	int x, y;
 	for(y = 0;y < LED_SIZE;y++){
 		for(x = 0;x < LED_SIZE;x++){
 			if(ledPower[y][x] == LED_ON){
-				int temp = ledPower[iy][ix];
-				ledPower[iy][ix] = ledPower[y][x];
-				ledPower[y][x] = temp;
+				replace(x,y,ix,iy);
+				ix++;
+				if(ix == LED_SIZE){
+					ix = 0;
+					iy++;
+				}
+			}
+		}
+	}
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			if(ledPower[y][x] == LED_MIDDLE){
+				replace(x,y,ix,iy);
 				ix++;
 				if(ix == LED_SIZE){
 					ix = 0;
@@ -367,6 +381,7 @@ void sortLED(){
 		}
 	}
 }
+
 
 void random_ai(int turn){
 	int x,y;
