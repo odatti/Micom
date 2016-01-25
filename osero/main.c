@@ -249,7 +249,7 @@ void game_main(){
 // 石をおけるか否かの判断
 int judgePutStone(int x, int y, int turn)
 {
-	if (y < 0 || y > 7 || x < 0 || x > 7) return 0;
+	// if (y < 0 || y > 7 || x < 0 || x > 7) return 0;
 	if (ledPower[y][x] != LED_OFF) return 0;
 	if (countTurnOver(turn, y, x, -1,  0)) return 1;  // 上 
 	if (countTurnOver(turn, y, x,  1,  0)) return 1;  // 下 
@@ -261,7 +261,6 @@ int judgePutStone(int x, int y, int turn)
 	if (countTurnOver(turn, y, x,  1,  1)) return 1;  // 右下
 	return 0;
 }
-
 // 石を置く処理
 void putStone(int x, int y, int turn){
 	int count, d, e, i;
@@ -288,7 +287,7 @@ int countTurnOver(int turn, int y, int x, int d, int e)
 	int aite = (turn == LED_ON) ? LED_MIDDLE : LED_ON;
 
 	for (i = 1; ledPower[y+i*d][x+i*e] ==aite; i++) {
-		if(y+i*e < 0 || y+i*e > 8 || x+i*e < 0 || x+i*e > 8){
+		if(y+i*d < 0 || y+i*d > LED_SIZE - 1 || x+i*e < 0 || x+i*e > LED_SIZE - 1){
 			break;
 		}
 	};        
