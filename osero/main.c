@@ -99,10 +99,10 @@ ISR(TIMER2_COMPA_vect){
 	for(x=0;x<LED_SIZE;x++){
 		int timing = 1;
 		// ターゲットのいる場所をONかOFFにする
-		if(scan == target.y && target.x == x){
+		if(scan == LED_SIZE - target.y - 1 && target.x == x){
 			timing = target.state;
 		}else{
-			timing = ledPower[scan][x];
+			timing = ledPower[LED_SIZE - scan - 1][x];
 		}
 
 		if(ledCount % timing == 0){
@@ -153,7 +153,7 @@ int main(void){
 					target.x = (target.x > 0) ? target.x - 1 : LED_SIZE - 1;
 					break;	
 				case 2:
-					target.y = (target.y > 0) ? target.y - 1 : LED_SIZE - 1;
+					target.y = (target.y < LED_SIZE - 1) ? target.y + 1 : 0;
 					break;	
 				case 3:
 					if(gameState == PLAYING)
