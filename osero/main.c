@@ -5,6 +5,7 @@
 #include "Sound.h"
 #include "Switch.h"
 #include "Random.h"
+#include "Target.h"
 
 #define LED_SIZE 8
 /** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
@@ -13,8 +14,6 @@
 #define LED_ON 1
 /** LEDが中間色の時の点滅時間 及び 黒の石が置いてあるマス */
 #define LED_MIDDLE 5
-
-#define EEPADDR 0x001
 
 typedef unsigned char uchar;
 /** ゲームの状態 */
@@ -68,13 +67,6 @@ int isFinishGame(int turn);
 void sortLED();
 
 
-/** プレイヤーの操作に関する構造体 */
-typedef struct TARGET{
-	int x,y;
-	int state;
-	int turn;
-}TARGET;
-
 /** LEDの明るさ情報 及び ボードの配置情報 */
 volatile int ledPower[LED_SIZE][LED_SIZE];
 /** LEDの明るさを制御するためのカウント変数 */
@@ -83,8 +75,6 @@ volatile int ledCount;
 volatile uchar led[LED_SIZE];
 static volatile uchar scan;
 
-/** プレイヤーの操作に関する変数 */
-TARGET target;
 /** 各種機能やタイマカウンタで用いる変数 */
 static volatile uchar clk;
 static volatile int cursor_clk;
@@ -101,14 +91,14 @@ ISR(TIMER0_COMPA_vect){
 	}
 	if(++ai_clk >= 500){
 		ai_clk = 0;
-		if(target.turn == LED_MIDDLE)
-			random_ai(target.turn);
+		if(target_getTurn() == LED_MIDDLE)
+			random_ai(target_getTurn());
 	}
 
 	// 0.5sごとにカーソルを点滅させる処理
 	if(++cursor_clk >= 250){
 		cursor_clk = 0;
-		target.state = (target.state == target.turn) ? LED_OFF : target.turn;
+		target_reverseState();
 	} 
 }
 
@@ -128,8 +118,8 @@ ISR(TIMER1_COMPA_vect){
 	for(x=0;x<LED_SIZE;x++){
 		int timing = 1;
 		// ターゲットのいる場所をONかOFFにする
-		if(gameState == PLAYING && scan == LED_SIZE - target.y - 1 && target.x == x){
-			timing = target.state;
+		if(gameState == PLAYING && scan == LED_SIZE - target_getY() - 1 && target_getX() == x){
+			timing = target_getState();
 		}else{
 			timing = ledPower[LED_SIZE - scan - 1][x];
 		}
@@ -207,9 +197,7 @@ void game_init(){
 	ledPower[3][4] = LED_MIDDLE;
 	ledPower[4][3] = LED_MIDDLE;
 
-	target.x = 2;
-	target.y = 4;
-	target.state = target.turn = LED_ON;
+	target_init(2,4,LED_ON, LED_MIDDLE);
 	gameState = PLAYING;
 }
 
@@ -229,16 +217,16 @@ void game_play(){
 			case 0:
 				break;	
 			case 1:
-				target.x = (target.x > 0) ? target.x - 1 : LED_SIZE - 1;
+				target_moveLeft();
 				break;	
 			case 2:
-				target.y = (target.y < LED_SIZE - 1) ? target.y + 1 : 0;
+				target_moveDown();
 				break;	
 			case 3:
-				if(target.turn != LED_ON)
+				if(target_getTurn() != LED_ON)
 					break;
-				putStone(target.x, target.y, target.turn);
-				if(isFinishGame(target.turn) > 0) gameState = FINISH;
+				putStone(target_getX(), target_getY(), target_getTurn());
+				if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
 				ai_clk = 0;
 				break;	
 		}
@@ -287,7 +275,7 @@ void putStone(int x, int y, int turn){
 	}
 	ledPower[y][x] = turn; // 石を置く
 	_sound(BEEP_C5, 3);
-	target.turn = (target.turn == LED_ON) ? LED_MIDDLE : LED_ON;
+	target_nextTurn();
 }
 
 // 石を置いたときにどれだけ石を裏返せるかを調べる
@@ -395,6 +383,6 @@ void random_ai(int turn){
 	x = index % LED_SIZE;
 	y = (int)(index / LED_SIZE);
 	putStone(x, y, turn);
-	if(isFinishGame(target.turn) > 0) gameState = FINISH;
+	if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
 }
 
