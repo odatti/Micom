@@ -33,6 +33,7 @@ void game_init();
 void led_init();
 void switch_init();
 void timer_init();
+void sound_init();
 void rand_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
@@ -82,13 +83,41 @@ static volatile uchar clk;
 static volatile int cursor_clk;
 static volatile uchar rnd;
 
+/** 音を鳴らす処理 */
+static volatile uchar period;
+void _sound(uchar tone, uchar length);
+enum
+{
+	BEEP_HIGH = 46,
+	BEEP_LOW = 168,
 
+	BEEP_C4 = 238,
+	BEEP_D4 = 212,
+	BEEP_E4 = 189,
+	BEEP_F4 = 178,
+	BEEP_G4 = 158,
+	BEEP_A4 = 141,
+	BEEP_B4 = 126,
+	BEEP_C5 = 118
+};
+
+int ai_clk;
 /** 2ms毎に呼ばれる関数（タイマカウンタ）*/
 ISR(TIMER0_COMPA_vect){
 	// 100msごとにgame_mainを起動する
 	if(++clk >= 50){
 		clk = 0;
+		if(period){
+			if(--period==0){
+				TCCR2A = 0;
+			}
+		}
 		user = 1;
+	}
+	if(++ai_clk >= 500){
+		ai_clk = 0;
+		if(target.turn == LED_MIDDLE)
+			random_ai(target.turn);
 	}
 
 	// 0.5sごとにカーソルを点滅させる処理
@@ -143,6 +172,7 @@ int main(void){
 	led_init();
 	timer_init();
 	switch_init();
+	sound_init();
 	rand_init();
 
 	// 割り込み処理を実行
@@ -178,6 +208,7 @@ int main(void){
 					{
 						putStone(target.x, target.y, target.turn);
 						if(isFinishGame(target.turn) > 0) gameState = FINISH;
+						ai_clk = 0;
 					}
 					break;	
 			}
@@ -203,12 +234,6 @@ void led_init(){
 	PORTD = 0x00;
 	PORTB = 0xff;
 	// LED捜査用のタイマカウンタ
-	/*
-	TCCR2A = 2; // CTCモード
-	TCCR2B = 3; // PS=32
-	OCR2A = 4000;
-	TIMSK2 |= (1 << OCIE2A);
-*/
 	TCCR1A = 0; 
 	TCCR1B = 0b00001010; // CTCモード(OCR1A), PS=8
 	OCR1A = 500;
@@ -259,7 +284,16 @@ void rand_init(){
 	srand(eeprom_read_word((uint16_t *) EEPADDR));
 	eeprom_write_word((uint16_t *) EEPADDR, rand());
 }
+void sound_init(){
+	TCCR2A = 0;
+	TCCR2B = 0x44;
+}
 
+void _sound(uchar tone, uchar length){
+	OCR2A = tone;
+	period = length;
+	TCCR2A = 0x12;
+}
 // ゲームの本体
 void game_main(){
 	switch(gameState){
@@ -268,8 +302,6 @@ void game_main(){
 			gameState = FINISHED;
 			break;
 		case PLAYING:
-			if(target.turn == LED_MIDDLE)
-				random_ai(target.turn);
 			break;
 		case FINISHED:
 		default:
@@ -310,6 +342,7 @@ void putStone(int x, int y, int turn){
 		}
 	}
 	ledPower[y][x] = turn; // 石を置く
+	_sound(BEEP_C5, 3);
 	target.turn = (target.turn == LED_ON) ? LED_MIDDLE : LED_ON;
 }
 
