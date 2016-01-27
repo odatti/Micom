@@ -7,79 +7,83 @@
 #include <stdlib.h>
 
 #define LED_SIZE 8
-#define LED_OFF 1000
+/** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
+#define LED_OFF 6
+/** LEDがオンの時の点滅間隔 及び 白の石が置いてあるマス */
 #define LED_ON 1
+/** LEDが中間色の時の点滅時間 及び 黒の石が置いてあるマス */
 #define LED_MIDDLE 5
 
+/** 各機能に利用 */
 #define SW_INTERVAL 6000UL
 #define SW ((~PINC>>4)&3)
-
 #define EEPADDR 0x000
 
+/** ゲームの状態 */
 enum
 {
 	PLAYING,
 	FINISH,
 	FINISHED
 };
+static volatile int gameState;
 
+/** 各種初期化関数 */
 void game_init();
 void led_init();
 void switch_init();
 void timer_init();
 void rand_init();
 
+/** ゲームの状態によって何らかの操作をするときはここ */
 void game_main();
 
+/** 置けるマスの中からランダムに配置を決定する対戦相手 */
 void random_ai(int turn);
 
+/** オセロ機能に関する関数軍 */
 int judgePutStone(int x, int y, int turn);
 void putStone(int x, int y, int turn);
 int countTurnOver(int turn, int x, int y, int d, int e);
-// まだ続くなら0, もう終わるならLED_ONの個数を返す
+/** まだ続くなら0, もう終わるならLED_ONの個数を返す */
 int isFinishGame(int turn);
 void sortLED();
 
 typedef unsigned char uchar;
 static volatile uchar user;
 
-
-// プレイヤーの操作に関する構造体
+/** プレイヤーの操作に関する構造体 */
 typedef struct TARGET{
 	int x,y;
 	int state;
 	int turn;
 }TARGET;
 
-// LED表示用の配列
-volatile uchar led[LED_SIZE];
-// LEDの明るさ情報
+/** LEDの明るさ情報 及び ボードの配置情報 */
 volatile int ledPower[LED_SIZE][LED_SIZE];
-// LEDの明るさを制御するためのカウント変数
+/** LEDの明るさを制御するためのカウント変数 */
 volatile int ledCount;
-// ダイナミックスキャン用
+/** LED表示用 */
+volatile uchar led[LED_SIZE];
 static volatile uchar scan;
 
-// スイッチとチャタリング対策に使う変数
+/** スイッチとチャタリング対策に使う変数 */
 volatile uchar sw;
 volatile uchar swnow;
 volatile uchar swnew;
 volatile unsigned swcnt;
-// ピン変化割り込みとスイッチの処理に使用
+/** ピン変化割り込みとスイッチの処理に使用 */
 volatile unsigned char pc = 0;
 
-// プレイヤーの操作に関する変数
+/** プレイヤーの操作に関する変数 */
 TARGET target;
+/** 各種機能やタイマカウンタで用いる変数 */
 static volatile uchar clk;
 static volatile int cursor_clk;
-static volatile int gameState;
-
-
-// ランダムを表現するためのカウンタ
 static volatile uchar rnd;
 
 
-// 2ms毎に呼ばれる関数（タイマカウンタ）
+/** 2ms毎に呼ばれる関数（タイマカウンタ）*/
 ISR(TIMER0_COMPA_vect){
 	// 100msごとにgame_mainを起動する
 	if(++clk >= 50){
@@ -95,18 +99,18 @@ ISR(TIMER0_COMPA_vect){
 }
 
 // led走査処理(タイマカウンタ)
-ISR(TIMER2_COMPA_vect){
+ISR(TIMER1_COMPA_vect){
 	unsigned char sc;
 	int x;
 	PORTB = 0; // led表示初期化
-	led[scan] = 0; // led表示初期化
 	scan = (scan + 1) & 7;
 	sc = ~(1 << scan);
+	led[scan] = 0; // led表示初期化
 	PORTC = 0x30 | (sc & 0x0f);// スイッチ用のプルアップを兼ねる
 	PORTD = sc & 0xf0;
 	
-	// 4段階の明るさでledを点滅させている
-	ledCount = (ledCount < LED_OFF - 1) ? ledCount+1:0;
+	// LED_OFF以外の間隔で転倒するためのカウンタ
+	ledCount = (ledCount >= LED_OFF - 1) ? 1:ledCount+1;
 	for(x=0;x<LED_SIZE;x++){
 		int timing = 1;
 		// ターゲットのいる場所をONかOFFにする
@@ -199,10 +203,17 @@ void led_init(){
 	PORTD = 0x00;
 	PORTB = 0xff;
 	// LED捜査用のタイマカウンタ
+	/*
 	TCCR2A = 2; // CTCモード
 	TCCR2B = 3; // PS=32
 	OCR2A = 4000;
 	TIMSK2 |= (1 << OCIE2A);
+*/
+	TCCR1A = 0; 
+	TCCR1B = 0b00001010; // CTCモード(OCR1A), PS=8
+	OCR1A = 500;
+	TIMSK1 |= (1 << OCIE1A);
+	
 }
 
 // スイッチを使用するための初期化
@@ -282,6 +293,7 @@ int judgePutStone(int x, int y, int turn)
 	if (countTurnOver(turn, y, x,  1,  1)) return 1;  // 右下
 	return 0;
 }
+
 // 石を置く処理
 void putStone(int x, int y, int turn){
 	int count, d, e, i;
@@ -353,6 +365,7 @@ void replace(int x, int y, int ix, int iy){
 	ledPower[iy][ix] = ledPower[y][x];
 	ledPower[y][x] = temp;
 }
+
 void sortLED(){
 	int ix=0,iy=0;
 	int x, y;
