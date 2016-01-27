@@ -24,7 +24,8 @@ enum
 {
 	PLAYING,
 	FINISH,
-	FINISHED
+	FINISHED,
+	MENU
 };
 static volatile int gameState;
 
@@ -37,10 +38,14 @@ void sound_init();
 void rand_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
-void game_main();
+void game_play();
+void game_finish();
+void game_finished();
+void game_menu();
 
 /** 置けるマスの中からランダムに配置を決定する対戦相手 */
 void random_ai(int turn);
+static volatile int ai_clk;
 
 /** オセロ機能に関する関数軍 */
 int judgePutStone(int x, int y, int turn);
@@ -51,7 +56,6 @@ int isFinishGame(int turn);
 void sortLED();
 
 typedef unsigned char uchar;
-static volatile uchar user;
 
 /** プレイヤーの操作に関する構造体 */
 typedef struct TARGET{
@@ -101,7 +105,6 @@ enum
 	BEEP_C5 = 118
 };
 
-int ai_clk;
 /** 2ms毎に呼ばれる関数（タイマカウンタ）*/
 ISR(TIMER0_COMPA_vect){
 	// 100msごとにgame_mainを起動する
@@ -112,7 +115,6 @@ ISR(TIMER0_COMPA_vect){
 				TCCR2A = 0;
 			}
 		}
-		user = 1;
 	}
 	if(++ai_clk >= 500){
 		ai_clk = 0;
@@ -179,7 +181,7 @@ int main(void){
 	sei();
 
 	// ゲームを回すforループ
-	for(user=0;;){
+	while(1){
 		wdt_reset();
 		if(pc){
 			swcnt = (swcnt < SW_INTERVAL) ? swcnt + 1 : 0;
@@ -188,35 +190,16 @@ int main(void){
 				pc = 0;
 			}
 		}
-
-		// スイッチの結果を更新
-		if(swnow != sw){
-			sw = swnow;
-			switch(sw){
-				case 0:
-					break;	
-				case 1:
-					target.x = (target.x > 0) ? target.x - 1 : LED_SIZE - 1;
-					break;	
-				case 2:
-					target.y = (target.y < LED_SIZE - 1) ? target.y + 1 : 0;
-					break;	
-				case 3:
-					if(target.turn != LED_ON)
-						break;
-					if(gameState == PLAYING)
-					{
-						putStone(target.x, target.y, target.turn);
-						if(isFinishGame(target.turn) > 0) gameState = FINISH;
-						ai_clk = 0;
-					}
-					break;	
-			}
-		}
-
-		if(user){
-			game_main();
-			user=0;
+		switch(gameState){
+			case FINISH:
+				game_finish();
+				break;
+			case PLAYING:
+				game_play();
+				break;
+			case FINISHED:
+			default:
+				break;
 		}
 	}
 	return 0;
@@ -270,7 +253,7 @@ void game_init(){
 	target.x = 2;
 	target.y = 4;
 	target.state = target.turn = LED_ON;
-	gameState = 0;
+	gameState = PLAYING;
 }
 
 // タイマカウンタを使用するための初期化
@@ -295,20 +278,38 @@ void _sound(uchar tone, uchar length){
 	TCCR2A = 0x12;
 }
 // ゲームの本体
-void game_main(){
-	switch(gameState){
-		case FINISH:
-			sortLED();
-			gameState = FINISHED;
-			break;
-		case PLAYING:
-			break;
-		case FINISHED:
-		default:
-			break;
+void game_play(){
+	// スイッチの結果を更新
+	if(swnow != sw){
+		sw = swnow;
+		switch(sw){
+			case 0:
+				break;	
+			case 1:
+				target.x = (target.x > 0) ? target.x - 1 : LED_SIZE - 1;
+				break;	
+			case 2:
+				target.y = (target.y < LED_SIZE - 1) ? target.y + 1 : 0;
+				break;	
+			case 3:
+				if(target.turn != LED_ON)
+					break;
+				putStone(target.x, target.y, target.turn);
+				if(isFinishGame(target.turn) > 0) gameState = FINISH;
+				ai_clk = 0;
+				break;	
+		}
 	}
 }
+void game_finish(){
+	sortLED();
+	gameState = FINISHED;
+}
+void game_finished(){
+}
+void game_menu(){
 
+}
 
 // 石をおけるか否かの判断
 int judgePutStone(int x, int y, int turn)
