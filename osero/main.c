@@ -143,7 +143,7 @@ ISR(TIMER1_COMPA_vect){
 	for(x=0;x<LED_SIZE;x++){
 		int timing = 1;
 		// ターゲットのいる場所をONかOFFにする
-		if(scan == LED_SIZE - target.y - 1 && target.x == x){
+		if(gameState == PLAYING && scan == LED_SIZE - target.y - 1 && target.x == x){
 			timing = target.state;
 		}else{
 			timing = ledPower[LED_SIZE - scan - 1][x];
