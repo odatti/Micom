@@ -2,11 +2,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
-#include <avr/eeprom.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include "Sound.h"
 #include "Switch.h"
+#include "Random.h"
 
 #define LED_SIZE 8
 /** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
@@ -16,7 +14,7 @@
 /** LEDが中間色の時の点滅時間 及び 黒の石が置いてあるマス */
 #define LED_MIDDLE 5
 
-#define EEPADDR 0x000
+#define EEPADDR 0x001
 
 typedef unsigned char uchar;
 /** ゲームの状態 */
@@ -33,7 +31,6 @@ static volatile int gameState;
 void game_init();
 void led_init();
 void timer_init();
-void rand_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
 void game_play();
@@ -152,7 +149,7 @@ int main(void){
 	timer_init();
 	switch_init();
 	sound_init();
-	rand_init();
+	random_init();
 
 	// 割り込み処理を実行
 	sei();
@@ -222,10 +219,6 @@ void timer_init(){
 	TCCR0A = 2; // CTC MODE
 	TCCR0B = 3; // 64PS
 	TIMSK0 |= (1 << OCIE0A);
-}
-void rand_init(){
-	srand(eeprom_read_word((uint16_t *) EEPADDR));
-	eeprom_write_word((uint16_t *) EEPADDR, rand());
 }
 
 // ゲームの本体
@@ -398,7 +391,7 @@ void random_ai(int turn){
 	if(index==0)
 		return;
 	
-	index = putList[rand() % index];	
+	index = putList[random_rand() % index];	
 	x = index % LED_SIZE;
 	y = (int)(index / LED_SIZE);
 	putStone(x, y, turn);
