@@ -1,5 +1,5 @@
 #include <avr/interrupt.h>
-#include "sound.h"
+#include "Sound.h"
 
 /** 音を鳴らす処理 */
 static volatile unsigned period;

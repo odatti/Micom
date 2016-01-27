@@ -1,5 +1,5 @@
-#ifndef _MYSOUND_H
-#define _MYSOUND_H_
+#ifndef _MY_SOUND_H
+#define _MY_SOUND_H_
 
 enum
 {

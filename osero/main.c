@@ -5,7 +5,8 @@
 #include <avr/eeprom.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "sound.h"
+#include "Sound.h"
+#include "Switch.h"
 
 #define LED_SIZE 8
 /** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
@@ -15,9 +16,6 @@
 /** LEDが中間色の時の点滅時間 及び 黒の石が置いてあるマス */
 #define LED_MIDDLE 5
 
-/** 各機能に利用 */
-#define SW_INTERVAL 6000UL
-#define SW ((~PINC>>4)&3)
 #define EEPADDR 0x000
 
 typedef unsigned char uchar;
@@ -34,7 +32,6 @@ static volatile int gameState;
 /** 各種初期化関数 */
 void game_init();
 void led_init();
-void switch_init();
 void timer_init();
 void rand_init();
 
@@ -88,14 +85,6 @@ volatile int ledCount;
 /** LED表示用 */
 volatile uchar led[LED_SIZE];
 static volatile uchar scan;
-
-/** スイッチとチャタリング対策に使う変数 */
-volatile uchar sw;
-volatile uchar swnow;
-volatile uchar swnew;
-volatile unsigned swcnt;
-/** ピン変化割り込みとスイッチの処理に使用 */
-volatile unsigned char pc = 0;
 
 /** プレイヤーの操作に関する変数 */
 TARGET target;
@@ -156,15 +145,6 @@ ISR(TIMER1_COMPA_vect){
 	PORTB = led[scan];
 }
 
-// スイッチのピン変化割り込み
-ISR(PCINT1_vect){
-	if(pc == 0){
-		pc = 1;
-	}
-	// ブロックしているピン変化割り込みをキャンセル
-	PCIFR |= _BV(PCIF1);
-}
-
 int main(void){
 	// 初期化
 	game_init();
@@ -180,13 +160,7 @@ int main(void){
 	// ゲームを回すforループ
 	while(1){
 		wdt_reset();
-		if(pc){
-			swcnt = (swcnt < SW_INTERVAL) ? swcnt + 1 : 0;
-			if(swcnt == 0){
-				swnow = SW;
-				pc = 0;
-			}
-		}
+		switch_update();
 		switch(gameState){
 			case FINISH:
 				game_finish();
@@ -219,17 +193,6 @@ void led_init(){
 	OCR1A = 500;
 	TIMSK1 |= (1 << OCIE1A);
 	
-}
-
-// スイッチを使用するための初期化
-void switch_init(){
-	// PORTCのピン変化割り込み有効
-	PCICR |= _BV(PCIE1);
-	// 割り込みを認めるビット位置を指定
-	PCMSK1 = _BV(PCINT12) | _BV(PCINT13);
-	swnow = 0x30;
-	swnew = 0x30;
-	sw = 0;
 }
 
 // ゲームの内容を初期化する関数
@@ -268,9 +231,8 @@ void rand_init(){
 // ゲームの本体
 void game_play(){
 	// スイッチの結果を更新
-	if(swnow != sw){
-		sw = swnow;
-		switch(sw){
+	if(switch_isChanged()){
+		switch(switch_getState()){
 			case 0:
 				break;	
 			case 1:

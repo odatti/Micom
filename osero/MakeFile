@@ -2,7 +2,7 @@
 PROJECT =  osero
 
 # ここにビルドに必要なソースファイル名を列記する
-SRCS = main.c sound.c
+SRCS = Sound.c Switch.c main.c
 
 # シリアルデバイス名
 DEV = /dev/tty.usbmodem1411
