@@ -5,6 +5,7 @@
 #include <avr/eeprom.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "sound.h"
 
 #define LED_SIZE 8
 /** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
@@ -35,7 +36,6 @@ void game_init();
 void led_init();
 void switch_init();
 void timer_init();
-void sound_init();
 void rand_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
@@ -104,34 +104,14 @@ static volatile uchar clk;
 static volatile int cursor_clk;
 static volatile uchar rnd;
 
-/** 音を鳴らす処理 */
-static volatile uchar period;
-void _sound(uchar tone, uchar length);
-enum
-{
-	BEEP_HIGH = 46,
-	BEEP_LOW = 168,
-
-	BEEP_C4 = 238,
-	BEEP_D4 = 212,
-	BEEP_E4 = 189,
-	BEEP_F4 = 178,
-	BEEP_G4 = 158,
-	BEEP_A4 = 141,
-	BEEP_B4 = 126,
-	BEEP_C5 = 118
-};
 
 /** 2ms毎に呼ばれる関数（タイマカウンタ）*/
 ISR(TIMER0_COMPA_vect){
 	// 100msごとにgame_mainを起動する
 	if(++clk >= 50){
 		clk = 0;
-		if(period){
-			if(--period==0){
-				TCCR2A = 0;
-			}
-		}
+		// 指定した時間になると停止させる
+		sound_update();
 	}
 	if(++ai_clk >= 500){
 		ai_clk = 0;
@@ -284,16 +264,7 @@ void rand_init(){
 	srand(eeprom_read_word((uint16_t *) EEPADDR));
 	eeprom_write_word((uint16_t *) EEPADDR, rand());
 }
-void sound_init(){
-	TCCR2A = 0;
-	TCCR2B = 0x44;
-}
 
-void _sound(uchar tone, uchar length){
-	OCR2A = tone;
-	period = length;
-	TCCR2A = 0x12;
-}
 // ゲームの本体
 void game_play(){
 	// スイッチの結果を更新
