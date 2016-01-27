@@ -19,6 +19,7 @@
 #define SW ((~PINC>>4)&3)
 #define EEPADDR 0x000
 
+typedef unsigned char uchar;
 /** ゲームの状態 */
 enum
 {
@@ -46,6 +47,23 @@ void game_menu();
 /** 置けるマスの中からランダムに配置を決定する対戦相手 */
 void random_ai(int turn);
 static volatile int ai_clk;
+static volatile uchar aite;
+enum{
+	PLAYER,
+	EASY,
+	NORMAL
+};
+/** 石の位置による重み付け情報 */
+static volatile int ai_normal_map[LED_SIZE][LED_SIZE] = {
+	{ 30,-12,  0, -1, -1,  0,-12, 30},
+	{-12,-15, -3, -3, -3, -3,-15,-12},
+	{  0, -3,  0, -1, -1,  0, -3,  0},
+	{ -1, -3, -1, -1, -1, -1, -3, -1},
+	{ -1, -3, -1, -1, -1, -1, -3, -1},
+	{  0, -3,  0, -1, -1,  0, -3,  0},
+	{-12,-15, -3, -3, -3, -3,-15,-12},
+	{ 30,-12,  0, -1, -1,  0,-12, 30}
+};
 
 /** オセロ機能に関する関数軍 */
 int judgePutStone(int x, int y, int turn);
@@ -55,7 +73,6 @@ int countTurnOver(int turn, int x, int y, int d, int e);
 int isFinishGame(int turn);
 void sortLED();
 
-typedef unsigned char uchar;
 
 /** プレイヤーの操作に関する構造体 */
 typedef struct TARGET{
