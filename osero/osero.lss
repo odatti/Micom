@@ -286,14 +286,14 @@ Disassembly of section .text:
 0000021a <led_init>:
  21a:	8f ef       	ldi	r24, 0xFF	; 255
  21c:	84 b9       	out	0x04, r24	; 4
- 21e:	9f e0       	ldi	r25, 0x0F	; 15
- 220:	97 b9       	out	0x07, r25	; 7
- 222:	9a ef       	ldi	r25, 0xFA	; 250
- 224:	9a b9       	out	0x0a, r25	; 10
- 226:	90 e3       	ldi	r25, 0x30	; 48
- 228:	98 b9       	out	0x08, r25	; 8
+ 21e:	8f e0       	ldi	r24, 0x0F	; 15
+ 220:	87 b9       	out	0x07, r24	; 7
+ 222:	8a ef       	ldi	r24, 0xFA	; 250
+ 224:	8a b9       	out	0x0a, r24	; 10
+ 226:	80 e3       	ldi	r24, 0x30	; 48
+ 228:	88 b9       	out	0x08, r24	; 8
  22a:	1b b8       	out	0x0b, r1	; 11
- 22c:	85 b9       	out	0x05, r24	; 5
+ 22c:	15 b8       	out	0x05, r1	; 5
  22e:	10 92 80 00 	sts	0x0080, r1
  232:	8a e0       	ldi	r24, 0x0A	; 10
  234:	80 93 81 00 	sts	0x0081, r24

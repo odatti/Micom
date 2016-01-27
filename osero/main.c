@@ -215,7 +215,7 @@ void led_init(){
 	DDRD = 0xfa;
 	PORTC = 0x30;
 	PORTD = 0x00;
-	PORTB = 0xff;
+	PORTB = 0x00;
 	// LED捜査用のタイマカウンタ
 	TCCR1A = 0; 
 	TCCR1B = 0b00001010; // CTCモード(OCR1A), PS=8
