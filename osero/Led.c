@@ -1,7 +1,35 @@
+#include <avr/io.h>
 #include "led.h"
+#include "Target.h"
+#include <avr/interrupt.h>
+
+/** LEDの明るさを制御するためのカウント変数 */
+volatile int ledCount;
+/** LED表示用 */
+volatile unsigned char led[LED_SIZE];
+static volatile unsigned char scan;
+
+static volatile int desplay_target = 0;
+/** ターゲットを表示する */
+void led_target_on(){
+	desplay_target = 1;
+}
+/** ターゲットを表示しない */
+void led_target_off(){
+	desplay_target = 0;
+}
 
 /** LEDの処理に関するものの初期化処理 */
 void led_init(){
+        int x, y;
+        ledCount = 0;
+        for(y = 0;y < LED_SIZE;y++){
+                for(x=0;x < LED_SIZE;x++){
+                        ledPower[y][x] = LED_OFF;
+                }
+                led[y] = 0x00;
+        }
+
 	// LED捜査用のタイマカウンタ
 	TCCR1A = 0;
 	TCCR1B = 0b00001010; // CTCモード(OCR1A), PS=8
@@ -26,14 +54,14 @@ ISR(TIMER1_COMPA_vect){
         for(x=0;x<LED_SIZE;x++){
                 int timing = 1;
                 // ターゲットのいる場所をONかOFFにする
-                if(gameState == PLAYING && scan == LED_SIZE - target.y - 1 && target.x == x){
-                        timing = target.state;
+                if(desplay_target == 1 && scan == LED_SIZE - target_getY() - 1 && target_getX() == x){
+                        timing = target_getState();
                 }else{
                         timing = ledPower[LED_SIZE - scan - 1][x];
                 }
 
                 if(ledCount % timing == 0){
-                        uchar temp = 1 << (LED_SIZE - x - 1);
+                        unsigned char temp = 1 << (LED_SIZE - x - 1);
                         led[scan] |= temp;
                 }
         }

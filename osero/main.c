@@ -6,14 +6,7 @@
 #include "Switch.h"
 #include "Random.h"
 #include "Target.h"
-
-#define LED_SIZE 8
-/** LEDがオフの時の点滅時間(OFFの場合は光らない) 及び 何もないマス */
-#define LED_OFF 6
-/** LEDがオンの時の点滅間隔 及び 白の石が置いてあるマス */
-#define LED_ON 1
-/** LEDが中間色の時の点滅時間 及び 黒の石が置いてあるマス */
-#define LED_MIDDLE 5
+#include "Led.h"
 
 typedef unsigned char uchar;
 /** ゲームの状態 */
@@ -28,7 +21,6 @@ static volatile int gameState;
 
 /** 各種初期化関数 */
 void game_init();
-void led_init();
 void timer_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
@@ -66,15 +58,6 @@ int countTurnOver(int turn, int x, int y, int d, int e);
 int isFinishGame(int turn);
 void sortLED();
 
-
-/** LEDの明るさ情報 及び ボードの配置情報 */
-volatile int ledPower[LED_SIZE][LED_SIZE];
-/** LEDの明るさを制御するためのカウント変数 */
-volatile int ledCount;
-/** LED表示用 */
-volatile uchar led[LED_SIZE];
-static volatile uchar scan;
-
 /** 各種機能やタイマカウンタで用いる変数 */
 static volatile uchar clk;
 static volatile int cursor_clk;
@@ -102,40 +85,16 @@ ISR(TIMER0_COMPA_vect){
 	} 
 }
 
-// led走査処理(タイマカウンタ)
-ISR(TIMER1_COMPA_vect){
-	unsigned char sc;
-	int x;
-	PORTB = 0; // led表示初期化
-	scan = (scan + 1) & 7;
-	sc = ~(1 << scan);
-	led[scan] = 0; // led表示初期化
-	PORTC = 0x30 | (sc & 0x0f);// スイッチ用のプルアップを兼ねる
-	PORTD = sc & 0xf0;
-	
-	// LED_OFF以外の間隔で転倒するためのカウンタ
-	ledCount = (ledCount >= LED_OFF - 1) ? 1:ledCount+1;
-	for(x=0;x<LED_SIZE;x++){
-		int timing = 1;
-		// ターゲットのいる場所をONかOFFにする
-		if(gameState == PLAYING && scan == LED_SIZE - target_getY() - 1 && target_getX() == x){
-			timing = target_getState();
-		}else{
-			timing = ledPower[LED_SIZE - scan - 1][x];
-		}
-
-		if(ledCount % timing == 0){
-			uchar temp = 1 << (LED_SIZE - x - 1);
-			led[scan] |= temp;
-		}
-	}
-	PORTB = led[scan];
-}
-
 int main(void){
+	// LED表示するための変数
+	DDRB = 0xff;
+	DDRC = 0x0f;
+	DDRD = 0xfa;
+	PORTC = 0x30;
+	PORTD = 0x00;
+	PORTB = 0x00;
 	// 初期化
 	game_init();
-	led_init();
 	timer_init();
 	switch_init();
 	sound_init();
@@ -163,35 +122,9 @@ int main(void){
 	return 0;
 }
 
-
-
-// LEDを表示するために必要な準備
-void led_init(){
-	// LED表示するための変数
-	DDRB = 0xff;
-	DDRC = 0x0f;
-	DDRD = 0xfa;
-	PORTC = 0x30;
-	PORTD = 0x00;
-	PORTB = 0x00;
-	// LED捜査用のタイマカウンタ
-	TCCR1A = 0; 
-	TCCR1B = 0b00001010; // CTCモード(OCR1A), PS=8
-	OCR1A = 500;
-	TIMSK1 |= (1 << OCIE1A);
-	
-}
-
 // ゲームの内容を初期化する関数
 void game_init(){
-	int x, y;
-	ledCount = 0;
-	for(y = 0;y < LED_SIZE;y++){
-		for(x=0;x < LED_SIZE;x++){
-			ledPower[y][x] = LED_OFF;
-		}
-		led[y] = 0x00;
-	}
+	led_init();
 	ledPower[3][3] = LED_ON;
 	ledPower[4][4] = LED_ON;
 	ledPower[3][4] = LED_MIDDLE;
@@ -211,6 +144,7 @@ void timer_init(){
 
 // ゲームの本体
 void game_play(){
+	led_target_on();
 	// スイッチの結果を更新
 	if(switch_isChanged()){
 		switch(switch_getState()){
@@ -233,6 +167,7 @@ void game_play(){
 	}
 }
 void game_finish(){
+	led_target_on();
 	sortLED();
 	gameState = FINISHED;
 }
