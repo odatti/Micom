@@ -86,11 +86,18 @@ int main(void){
 	PORTD = 0x00;
 	PORTB = 0x00;
 	// 初期化
-	game_init();
+	led_init();
 	timer_init();
 	switch_init();
 	sound_init();
 	random_init();
+	// 最初の石とターゲットを配置
+	ledPower[3][3] = LED_ON;
+	ledPower[4][4] = LED_ON;
+	ledPower[3][4] = LED_MIDDLE;
+	ledPower[4][3] = LED_MIDDLE;
+	target_init(2,4,LED_ON, LED_MIDDLE);
+	gameState = PLAYING;
 
 	// 割り込み処理を実行
 	sei();
@@ -114,17 +121,6 @@ int main(void){
 	return 0;
 }
 
-// ゲームの内容を初期化する関数
-void game_init(){
-	led_init();
-	ledPower[3][3] = LED_ON;
-	ledPower[4][4] = LED_ON;
-	ledPower[3][4] = LED_MIDDLE;
-	ledPower[4][3] = LED_MIDDLE;
-
-	target_init(2,4,LED_ON, LED_MIDDLE);
-	gameState = PLAYING;
-}
 
 // タイマカウンタを使用するための初期化
 void timer_init(){
@@ -159,7 +155,7 @@ void game_play(){
 	}
 }
 void game_finish(){
-	led_target_on();
+	led_target_off();
 	sortLED();
 	gameState = FINISHED;
 }
