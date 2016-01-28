@@ -85,9 +85,6 @@ int isFinishGame(int turn){
         return on;
 }
 
-
-
-
 void replace(int x, int y, int ix, int iy){
         int temp = ledPower[iy][ix];
         ledPower[iy][ix] = ledPower[y][x];

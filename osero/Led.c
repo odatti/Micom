@@ -24,7 +24,7 @@ void led_reset(){
 	int x,y;
 	for(y = 0;y < LED_SIZE;y++){
 		for(x = 0;x < LED_SIZE;x++){
-			ledPower[y][x] = 0;
+			ledPower[y][x] = LED_OFF;
 		}
                 led[y] = 0x00;
 	}
