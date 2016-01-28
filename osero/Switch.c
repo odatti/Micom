@@ -2,7 +2,7 @@
 #include "Switch.h"
 
 /** チャタリング待ち時間 */
-#define SW_INTERVAL 6000UL
+#define SW_INTERVAL 4000UL
 /** スイッチの状態 */
 #define SW ((~PINC>>4)&3)
 

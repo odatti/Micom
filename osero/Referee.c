@@ -49,6 +49,9 @@ int countTurnOver(int turn, int y, int x, int d, int e){
                         break;
                 }
         };
+	if(y+i*d < 0 || y+i*d > LED_SIZE - 1 || x+i*e < 0 || x+i*e > LED_SIZE - 1){
+		return 0;
+	}
 
         if (ledPower[y+i*d][x+i*e] == turn) {                          
                 return i-1;
