@@ -7,6 +7,7 @@
 #include "Target.h"
 #include "Led.h"
 #include "Referee.h"
+#include "AI.h"
 
 typedef unsigned char uchar;
 
@@ -62,18 +63,8 @@ void nextMenu();
 
 /** プレイする人の情報 */
 #define PLAYER_TYPE_MAX 3
-enum{
-	PLAYER = 0,
-	EASY = 1,
-	NORMAL = 2
-};
 static volatile int player2 = NORMAL;
 
-/** 置けるマスの中からランダムに配置を決定する対戦相手 */
-void random_ai(int turn);
-void normal_ai(int turn);
-/** プレイヤーが操作 */
-void player_controll(int turn);
 static volatile int ai_clk;
 
 
@@ -94,11 +85,15 @@ ISR(TIMER0_COMPA_vect){
 	// 相手がプレイヤーじゃなければ疑似思考時間
 	if(player2!=PLAYER && target_getTurn() == LED_MIDDLE){
 		if( ++ai_clk >= 500){
+			int check = 0;
 			ai_clk = 0;
 			switch(player2){
-				case EASY: random_ai(target_getTurn()); break;
-				case NORMAL: normal_ai(target_getTurn()); break;
+				case EASY: check = random_ai(target_getTurn()); break;
+				case NORMAL: check = normal_ai(target_getTurn()); break;
 				default: break;
+			}
+			if(check == 1){
+				if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;	
 			}
 		}
 	}
@@ -225,78 +220,3 @@ void nextMenu(){
 	}
 }
 
-
-/** 石の位置による重み付け情報 */
-static volatile int ai_normal_map[LED_SIZE][LED_SIZE] = {
-	{ 30,-12,  0, -1, -1,  0,-12, 30},
-	{-12,-15, -3, -3, -3, -3,-15,-12},
-	{  0, -3,  0, -1, -1,  0, -3,  0},
-	{ -1, -3, -1, -1, -1, -1, -3, -1},
-	{ -1, -3, -1, -1, -1, -1, -3, -1},
-	{  0, -3,  0, -1, -1,  0, -3,  0},
-	{-12,-15, -3, -3, -3, -3,-15,-12},
-	{ 30,-12,  0, -1, -1,  0,-12, 30}
-};
-typedef struct AI_TARGET{
-	int index;// 座標
-	int score;// 重み
-}AI_TARGET;
-void normal_ai(int turn){
-	int x,y;
-	int i;
-	AI_TARGET putList[64];
-	int index = 0;
-	int decide = 0;
-	for(i = 0;i < 64;i++){
-		putList[i].index = 0;
-		putList[i].score = 0;
-	}
-	for(y = 0;y < LED_SIZE;y++){
-		for(x = 0;x < LED_SIZE;x++){
-			if(judgePutStone(x,y,turn) == 1){
-				putList[index].index = y*LED_SIZE+x;
-				putList[index].score = ai_normal_map[y][x];
-				index++;
-			}
-		}
-	}
-	// 一番スコアの高い場所を調べる(リニアサーチなので予測しやすい)
-	for(i=0;i<index;i++){
-		if(putList[decide].score < putList[i].score){
-			decide = i;
-		}
-	}
-	
-	if(index != 0){
-		index = putList[decide].index;	
-		x = index % LED_SIZE;
-		y = (int)(index / LED_SIZE);
-		putStone(x, y, turn);
-	}
-	if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
-}
-
-void random_ai(int turn){
-	int x,y;
-	int putList[64];
-	int index = 0;
-	for(x = 0;x < 64;x++){
-		putList[64] = 0;
-	}
-	for(y = 0;y < LED_SIZE;y++){
-		for(x = 0;x < LED_SIZE;x++){
-			if(judgePutStone(x,y,turn) == 1){
-				putList[index] = y*LED_SIZE+x;
-				index++;
-			}
-		}
-	}
-	if(index==0)
-		return;
-	
-	index = putList[random_rand() % index];	
-	x = index % LED_SIZE;
-	y = (int)(index / LED_SIZE);
-	putStone(x, y, turn);
-	if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
-}
