@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "led.h"
+#include "Led.h"
 #include "Target.h"
 #include <avr/interrupt.h>
 
@@ -19,16 +19,21 @@ void led_target_off(){
 	desplay_target = 0;
 }
 
+
+void led_reset(){
+	int x,y;
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			ledPower[y][x] = 0;
+		}
+                led[y] = 0x00;
+	}
+}
 /** LEDの処理に関するものの初期化処理 */
 void led_init(){
         int x, y;
         ledCount = 0;
-        for(y = 0;y < LED_SIZE;y++){
-                for(x=0;x < LED_SIZE;x++){
-                        ledPower[y][x] = LED_OFF;
-                }
-                led[y] = 0x00;
-        }
+	led_reset();
 
 	// LED捜査用のタイマカウンタ
 	TCCR1A = 0;
@@ -67,3 +72,4 @@ ISR(TIMER1_COMPA_vect){
         }
         PORTB = led[scan];
 }
+

@@ -10,34 +10,69 @@
 #include "Referee.h"
 
 typedef unsigned char uchar;
+
+static volatile uchar menuLed[3][LED_SIZE] = {
+{
+	0b00000000,
+	0b11000110,
+	0b10100101,
+	0b11000110,
+	0b10000100,
+	0b00101000,
+	0b00010000,
+	0b00000000
+},{
+	0b01001110,
+	0b10100100,
+	0b11100100,
+	0b10101110,
+	0b00000000,
+	0b10000110,
+	0b10101010,
+	0b11010111
+},{
+	0b01001110,
+	0b10100100,
+	0b11100100,
+	0b10101110,
+	0b00000010,
+	0b10000101,
+	0b10101010,
+	0b11010111
+}
+};
+
 /** ゲームの状態 */
 enum
 {
+	MENU,
+	GAME_INIT,
 	PLAYING,
 	FINISH,
 	FINISHED,
-	MENU
 };
 static volatile int gameState;
 
 /** 各種初期化関数 */
-void game_init();
 void timer_init();
 
 /** ゲームの状態によって何らかの操作をするときはここ */
 void game_play();
-void game_finish();
-void game_finished();
 void game_menu();
+void nextMenu();
 
+/** プレイする人の情報 */
+#define PLAYER_TYPE_MAX 3
+enum{
+	PLAYER = 0,
+	EASY = 1,
+	NORMAL = 2
+};
+static volatile int player2 = NORMAL;
 /** 置けるマスの中からランダムに配置を決定する対戦相手 */
 void random_ai(int turn);
 static volatile int ai_clk;
-enum{
-	PLAYER,
-	EASY,
-	NORMAL
-};
+
 /** 石の位置による重み付け情報 */
 static volatile int ai_normal_map[LED_SIZE][LED_SIZE] = {
 	{ 30,-12,  0, -1, -1,  0,-12, 30},
@@ -91,13 +126,9 @@ int main(void){
 	switch_init();
 	sound_init();
 	random_init();
-	// 最初の石とターゲットを配置
-	ledPower[3][3] = LED_ON;
-	ledPower[4][4] = LED_ON;
-	ledPower[3][4] = LED_MIDDLE;
-	ledPower[4][3] = LED_MIDDLE;
-	target_init(2,4,LED_ON, LED_MIDDLE);
-	gameState = PLAYING;
+	gameState = MENU;
+	led_target_off();
+	nextMenu();
 
 	// 割り込み処理を実行
 	sei();
@@ -107,11 +138,27 @@ int main(void){
 		wdt_reset();
 		switch_update();
 		switch(gameState){
-			case FINISH:
-				game_finish();
+			case MENU:
+				game_menu();
+				break;
+			case GAME_INIT:
+				led_reset();
+				// 最初の石とターゲットを配置
+				ledPower[3][3] = LED_ON;
+				ledPower[4][4] = LED_ON;
+				ledPower[3][4] = LED_MIDDLE;
+				ledPower[4][3] = LED_MIDDLE;
+				target_init(2,4,LED_ON, LED_MIDDLE);
+				led_target_on();
+				gameState = PLAYING;
 				break;
 			case PLAYING:
 				game_play();
+				break;
+			case FINISH:
+				led_target_off();
+				sortLED();
+				gameState = FINISHED;
 				break;
 			case FINISHED:
 			default:
@@ -132,7 +179,6 @@ void timer_init(){
 
 // ゲームの本体
 void game_play(){
-	led_target_on();
 	// スイッチの結果を更新
 	if(switch_isChanged()){
 		switch(switch_getState()){
@@ -154,15 +200,30 @@ void game_play(){
 		}
 	}
 }
-void game_finish(){
-	led_target_off();
-	sortLED();
-	gameState = FINISHED;
-}
-void game_finished(){
-}
-void game_menu(){
 
+void game_menu(){
+	// スイッチの結果を更新
+	if(switch_isChanged()){
+		switch(switch_getState()){
+			case 1:
+				nextMenu();
+				break;
+			case 2:
+				gameState = GAME_INIT;
+				break;	
+			default: break;	
+		}
+	}
+}
+void nextMenu(){
+	int x,y;
+	player2 = (player2 < PLAYER_TYPE_MAX - 1) ? player2 + 1 : 0;
+	led_reset();
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			ledPower[y][x] = (menuLed[player2][y] & (0x01 << (LED_SIZE - x -1))) ? LED_ON : LED_OFF;
+		}
+	}
 }
 
 
@@ -190,4 +251,3 @@ void random_ai(int turn){
 	putStone(x, y, turn);
 	if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
 }
-

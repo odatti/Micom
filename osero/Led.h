@@ -11,6 +11,8 @@
 
 /** LEDの処理に関するものの初期化処理 */
 extern void led_init();
+/** LEDの状態を０で初期化する */
+extern void led_reset();
 
 /** LEDの明るさ情報ここに登録されている情報通りにLEDを光らせる */
 volatile int ledPower[LED_SIZE][LED_SIZE];
