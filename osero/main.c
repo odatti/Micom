@@ -61,7 +61,7 @@ void game_menu();
 void nextMenu();
 
 /** プレイする人の情報 */
-#define PLAYER_TYPE_MAX 3
+#define PLAYER_TYPE_MAX 2
 enum{
 	PLAYER = 0,
 	EASY = 1,
