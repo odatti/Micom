@@ -1,4 +1,3 @@
-// include
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -69,8 +68,12 @@ enum{
 	NORMAL = 2
 };
 static volatile int player2 = NORMAL;
+
 /** 置けるマスの中からランダムに配置を決定する対戦相手 */
 void random_ai(int turn);
+void normal_ai(int turn);
+/** プレイヤーが操作 */
+void player_controll(int turn);
 static volatile int ai_clk;
 
 /** 石の位置による重み付け情報 */
@@ -99,10 +102,16 @@ ISR(TIMER0_COMPA_vect){
 		// 指定した時間になると停止させる
 		sound_update();
 	}
-	if(++ai_clk >= 500){
-		ai_clk = 0;
-		if(target_getTurn() == LED_MIDDLE)
-			random_ai(target_getTurn());
+	// 相手がプレイヤーじゃなければ疑似思考時間
+	if(player2!=PLAYER && target_getTurn() == LED_MIDDLE){
+		if( ++ai_clk >= 500){
+			ai_clk = 0;
+			switch(player2){
+				case EASY: random_ai(target_getTurn()); break;
+				case NORMAL: normal_ai(target_getTurn()); break;
+				default: break;
+			}
+		}
 	}
 
 	// 0.5sごとにカーソルを点滅させる処理
@@ -191,7 +200,8 @@ void game_play(){
 				target_moveDown();
 				break;	
 			case 3:
-				if(target_getTurn() != LED_ON)
+				// プレイヤー2がAIで、自分の番でなければ通らない
+				if(target_getTurn() != LED_ON && player2 != PLAYER)
 					break;
 				putStone(target_getX(), target_getY(), target_getTurn());
 				if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
@@ -226,6 +236,31 @@ void nextMenu(){
 	}
 }
 
+
+void normal_ai(int turn){
+	int x,y;
+	int putList[64];
+	int index = 0;
+	for(x = 0;x < 64;x++){
+		putList[64] = 0;
+	}
+	for(y = 0;y < LED_SIZE;y++){
+		for(x = 0;x < LED_SIZE;x++){
+			if(judgePutStone(x,y,turn) == 1){
+				putList[index] = y*LED_SIZE+x;
+				index++;
+			}
+		}
+	}
+	if(index==0)
+		return;
+	
+	index = putList[random_rand() % index];	
+	x = index % LED_SIZE;
+	y = (int)(index / LED_SIZE);
+	putStone(x, y, turn);
+	if(isFinishGame(target_getTurn()) > 0) gameState = FINISH;
+}
 
 void random_ai(int turn){
 	int x,y;
