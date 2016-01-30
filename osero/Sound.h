@@ -1,6 +1,7 @@
 #ifndef _MY_SOUND_H
 #define _MY_SOUND_H_
 
+/** 鳴らすことができる音 */
 enum
 {
         BEEP_HIGH = 46,
@@ -34,9 +35,13 @@ enum
 	BEEP_FINISH = 1000
 };
 
+/** 音の処理に使用するものを初期化する */
 extern void sound_init();
+/** 指定した音を、指定した時間鳴らす処理 */
 extern void _sound(unsigned char tone, unsigned char length);
+/** 音の再生状態を更新するための処理、音の長さはupdateが呼ばれる回数である。 */
 extern void sound_update();
+/** 現在音が再生されているなら1を、それ以外なら0を返す */
 extern int sound_isPlaying();
 
 #endif 

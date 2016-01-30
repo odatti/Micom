@@ -4,7 +4,6 @@
 #include "sound.h"
 #include "Referee.h"
 
-// 石を置く処理
 void putStone(int x, int y, int turn){
         int count, d, e, i;
         if(judgePutStone(x,y,turn) == 0)
@@ -24,7 +23,6 @@ void putStone(int x, int y, int turn){
         target_nextTurn();
 }
 
-// 石をおけるか否かの判断
 int judgePutStone(int x, int y, int turn){
         // if (y < 0 || y > 7 || x < 0 || x > 7) return 0;
         if (ledPower[y][x] != LED_OFF) return 0;
@@ -40,7 +38,6 @@ int judgePutStone(int x, int y, int turn){
 }
 
 
-// 石を置いたときにどれだけ石を裏返せるかを調べる
 int countTurnOver(int turn, int y, int x, int d, int e){
         int i;
         int aite = (turn == LED_ON) ? LED_MIDDLE : LED_ON;
@@ -62,7 +59,6 @@ int countTurnOver(int turn, int y, int x, int d, int e){
 }
 
 
-// まだ続くなら0, もう終わるならLED_ONの個数を返す
 int isFinishGame(int turn){
         int x,y;
         int on = 0;

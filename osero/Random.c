@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "Random.h"
 
+/** シード値 */
 #define EEPADDR 0x000
 
 /** 擬似乱数の初期化 */

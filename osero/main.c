@@ -11,6 +11,7 @@
 #include "AI.h"
 
 typedef unsigned char uchar;
+/** 勝利した時にならすBGM */
 static volatile struct CODE win[] = {
 	BEEP_END,3,
 	BEEP_E4, 2,
@@ -29,6 +30,7 @@ static volatile struct CODE win[] = {
 	BEEP_FINISH,2
 };
 
+/** 敗北した時にならすBGM */
 static volatile struct CODE lose[] = {
 	BEEP_END, 3,
 	BEEP_E4, 10,
@@ -36,8 +38,10 @@ static volatile struct CODE lose[] = {
 	BEEP_C4, 10,
 	BEEP_FINISH,0
 };
+/** 現在慣らしている音の、次の音を指定するための添字 */
 static volatile unsigned char bgm_index = 0;
 
+/** メニュー表示に使用する配列 */
 static volatile uchar menuLed[3][LED_SIZE] = {
 {
 	0b11000000,
@@ -114,6 +118,7 @@ ISR(TIMER0_COMPA_vect){
 		if( ++ai_clk >= 500){
 			int check = 0;
 			ai_clk = 0;
+			// AIの種類によって処理方法を変更する
 			switch(player2){
 				case EASY: check = random_ai(target_getTurn()); break;
 				case NORMAL: check = normal_ai(target_getTurn()); break;
@@ -157,11 +162,12 @@ int main(void){
 	while(1){
 		wdt_reset();
 		switch_update();
+		// ゲームの状態によって処理を変える
 		switch(gameState){
 			case MENU:
 				game_menu();
 				break;
-			case GAME_INIT:
+			case GAME_INIT: // ゲームの初期化、１回だけ通る
 				win_player = LED_OFF;
 				led_reset();
 				// 最初の石とターゲットを配置
@@ -205,7 +211,7 @@ int main(void){
 }
 
 
-// タイマカウンタを使用するための初期化
+/** タイマカウンタを使用するための初期化 */
 void timer_init(){
 	OCR0A = 249; // 2ms
 	TCCR0A = 2; // CTC MODE
@@ -213,7 +219,7 @@ void timer_init(){
 	TIMSK0 |= (1 << OCIE0A);
 }
 
-// ゲームの本体
+/** ゲームの本体 */
 void game_play(){
 	// スイッチの結果を更新
 	if(switch_isChanged()){
@@ -238,6 +244,7 @@ void game_play(){
 	}
 }
 
+/** メニュー画面 */
 void game_menu(){
 	// スイッチの結果を更新
 	if(switch_isChanged()){
@@ -252,6 +259,7 @@ void game_menu(){
 		}
 	}
 }
+/** 次のメニューを表示する */
 void nextMenu(){
 	int x,y;
 	player2 = (player2 < PLAYER_TYPE_MAX - 1) ? player2 + 1 : 0;

@@ -17,7 +17,9 @@ extern void led_reset();
 /** LEDの明るさ情報ここに登録されている情報通りにLEDを光らせる */
 volatile int ledPower[LED_SIZE][LED_SIZE];
 
+/** ターゲットを表示する設定にする */
 extern void led_target_on();
+/** ターゲットを表示しない設定にする */
 extern void led_target_off();
 
 #endif 
