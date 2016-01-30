@@ -30,12 +30,13 @@ enum
         BEEP_A5 = 71,
         BEEP_AS5= 67,
         BEEP_B5 = 63,
-        BEEP_END = 0
-
+        BEEP_END = 0,
+	BEEP_FINISH = 1000
 };
 
 extern void sound_init();
 extern void _sound(unsigned char tone, unsigned char length);
 extern void sound_update();
+extern int sound_isPlaying();
 
 #endif 

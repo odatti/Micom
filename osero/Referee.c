@@ -124,6 +124,6 @@ void sortLED(){
                         }
                 }
         }
-	win_player = (temp > temp-iy*LED_SIZE+ix) ? LED_ON : LED_MIDDLE;
+	win_player = (temp > (int)(iy*LED_SIZE+ix-temp)) ? LED_ON : LED_MIDDLE;
 }
 

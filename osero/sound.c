@@ -22,3 +22,7 @@ void sound_update(){
 		}
 	}
 }
+
+int sound_isPlaying(){
+	return (period != 0) ? 1 : 0;
+}

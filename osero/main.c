@@ -12,22 +12,31 @@
 
 typedef unsigned char uchar;
 static volatile struct CODE win[] = {
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_END,2
+	BEEP_END,3,
+	BEEP_E4, 2,
+	BEEP_END,0,
+	BEEP_E4, 2,
+	BEEP_END,0,
+	BEEP_E4, 2,
+	BEEP_END,0,
+	BEEP_E4, 2,
+	BEEP_END,1,
+	BEEP_D4, 2,
+	BEEP_END,1,
+	BEEP_G4, 2,
+	BEEP_END,1,
+	BEEP_E4, 8,
+	BEEP_FINISH,2
 };
 
 static volatile struct CODE lose[] = {
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_C4, 2,
-	BEEP_END,2
+	BEEP_END, 3,
+	BEEP_E4, 10,
+	BEEP_D4, 10,
+	BEEP_C4, 10,
+	BEEP_FINISH,0
 };
+static volatile unsigned char bgm_index = 0;
 
 static volatile uchar menuLed[3][LED_SIZE] = {
 {
@@ -153,6 +162,7 @@ int main(void){
 				game_menu();
 				break;
 			case GAME_INIT:
+				win_player = LED_OFF;
 				led_reset();
 				// 最初の石とターゲットを配置
 				ledPower[3][3] = LED_ON;
@@ -172,6 +182,21 @@ int main(void){
 				gameState = FINISHED;
 				break;
 			case FINISHED:
+				if(sound_isPlaying() == 0){
+					unsigned char f = BEEP_FINISH;
+					if(win_player == LED_ON){
+						if(win[bgm_index].tone != f){
+							_sound(win[bgm_index].tone, win[bgm_index].length);
+							bgm_index++;
+						}
+					}else{
+						if(lose[bgm_index].tone != f){
+							_sound(lose[bgm_index].tone, lose[bgm_index].length);
+							bgm_index++;
+						}
+					}
+				}
+				break;
 			default:
 				break;
 		}
