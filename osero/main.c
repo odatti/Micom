@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
+#include "Global.h"
 #include "Sound.h"
 #include "Switch.h"
 #include "Random.h"
@@ -10,6 +11,23 @@
 #include "AI.h"
 
 typedef unsigned char uchar;
+static volatile struct CODE win[] = {
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_END,2
+};
+
+static volatile struct CODE lose[] = {
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_C4, 2,
+	BEEP_END,2
+};
 
 static volatile uchar menuLed[3][LED_SIZE] = {
 {

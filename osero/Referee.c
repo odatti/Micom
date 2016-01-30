@@ -1,3 +1,4 @@
+#include "Global.h"
 #include "Led.h"
 #include "Target.h"
 #include "sound.h"
@@ -95,6 +96,7 @@ void replace(int x, int y, int ix, int iy){
 }
 
 void sortLED(){
+	int temp = 0;
         int ix=0,iy=0;
         int x, y;
         for(y = 0;y < LED_SIZE;y++){
@@ -109,6 +111,7 @@ void sortLED(){
                         }
                 }
         }
+	temp = LED_SIZE * iy + ix;
         for(y = 0;y < LED_SIZE;y++){
                 for(x = 0;x < LED_SIZE;x++){
                         if(ledPower[y][x] == LED_MIDDLE){
@@ -121,5 +124,6 @@ void sortLED(){
                         }
                 }
         }
+	win_player = (temp > temp-iy*LED_SIZE+ix) ? LED_ON : LED_MIDDLE;
 }
 
